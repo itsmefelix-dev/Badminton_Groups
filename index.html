@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom Grouping</title>
+  <title>Badminton Grouping</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,7 +10,7 @@
       max-width: 600px;
       margin: auto;
     }
-    .group {
+    .court {
       margin-bottom: 20px;
     }
     input {
@@ -35,7 +35,7 @@
       padding: 10px;
       text-align: center;
     }
-    .group button {
+    .court button {
       margin-top: 10px;
     }
     .on-break {
@@ -64,40 +64,43 @@
     </tbody>
   </table>
 
-  <div class="group">
-    <h3>Group 1</h3>
-    <div id="group1"></div>
-    <button id="shuffleGroup1" onclick="shuffleGroup('group1')" disabled>Shuffle Group 1</button>
-    <button onclick="generateGroup('group1')" id="generateGroup1">Generate Group 1</button>
-    <button onclick="startGroup('group1')" id="startButton1" disabled>Start Group 1</button>
-    <button onclick="finishGroup('group1')" id="finishButton1" disabled>Finish Group 1</button>
+  <!-- Court 1 -->
+  <div class="court">
+    <h3>Court 1</h3>
+    <div id="court1"></div>
+    <button id="shuffleCourt1" onclick="shuffleCourt('court1')" disabled>Shuffle Court 1</button>
+    <button onclick="generateCourt('court1')" id="generateCourt1">Generate Court 1</button>
+    <button onclick="startCourt('court1')" id="startButton1" disabled>Start Court 1</button>
+    <button onclick="finishCourt('court1')" id="finishButton1" disabled>Finish Court 1</button>
   </div>
 
-  <div class="group">
-    <h3>Group 2</h3>
-    <div id="group2"></div>
-    <button id="shuffleGroup2" onclick="shuffleGroup('group2')" disabled>Shuffle Group 2</button>
-    <button onclick="generateGroup('group2')" id="generateGroup2">Generate Group 2</button>
-    <button onclick="startGroup('group2')" id="startButton2" disabled>Start Group 2</button>
-    <button onclick="finishGroup('group2')" id="finishButton2" disabled>Finish Group 2</button>
+  <!-- Court 2 -->
+  <div class="court">
+    <h3>Court 2</h3>
+    <div id="court2"></div>
+    <button id="shuffleCourt2" onclick="shuffleCourt('court2')" disabled>Shuffle Court 2</button>
+    <button onclick="generateCourt('court2')" id="generateCourt2">Generate Court 2</button>
+    <button onclick="startCourt('court2')" id="startButton2" disabled>Start Court 2</button>
+    <button onclick="finishCourt('court2')" id="finishButton2" disabled>Finish Court 2</button>
   </div>
 
-  <div class="group">
-    <h3>Group 3</h3>
-    <div id="group3"></div>
-    <button id="shuffleGroup3" onclick="shuffleGroup('group3')" disabled>Shuffle Group 3</button>
-    <button onclick="generateGroup('group3')" id="generateGroup3">Generate Group 3</button>
-    <button onclick="startGroup('group3')" id="startButton3" disabled>Start Group 3</button>
-    <button onclick="finishGroup('group3')" id="finishButton3" disabled>Finish Group 3</button>
+  <!-- Court 3 -->
+  <div class="court">
+    <h3>Court 3</h3>
+    <div id="court3"></div>
+    <button id="shuffleCourt3" onclick="shuffleCourt('court3')" disabled>Shuffle Court 3</button>
+    <button onclick="generateCourt('court3')" id="generateCourt3">Generate Court 3</button>
+    <button onclick="startCourt('court3')" id="startButton3" disabled>Start Court 3</button>
+    <button onclick="finishCourt('court3')" id="finishButton3" disabled>Finish Court 3</button>
   </div>
 
   <script>
     const inputArea = document.getElementById("input-area");
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let group1 = [];
-    let group2 = [];
-    let group3 = [];
+    let court1 = [];
+    let court2 = [];
+    let court3 = [];
     const maxPlayers = 40;
 
     // Create input fields for up to 40 people
@@ -171,21 +174,21 @@
       generateReadyList();
     }
 
-    function shuffleGroup(groupId) {
-      // Get the group arrays
-      let groupNames;
-      if (groupId === "group1") groupNames = group1;
-      if (groupId === "group2") groupNames = group2;
-      if (groupId === "group3") groupNames = group3;
+    function shuffleCourt(courtId) {
+      // Get the court arrays
+      let courtNames;
+      if (courtId === "court1") courtNames = court1;
+      if (courtId === "court2") courtNames = court2;
+      if (courtId === "court3") courtNames = court3;
 
-      // Shuffle the names within the selected group
-      const shuffled = shuffleArray(groupNames);
+      // Shuffle the names within the selected court
+      const shuffled = shuffleArray(courtNames);
 
-      // Display shuffled names for the selected group
-      document.getElementById(groupId).innerText = shuffled.join(", ");
+      // Display shuffled names for the selected court
+      document.getElementById(courtId).innerText = shuffled.join(", ");
     }
 
-    function generateGroup(groupId) {
+    function generateCourt(courtId) {
       // If there are enough players in the ready list (at least 4)
       const availablePlayers = readyPlayers.filter(player => !player.onBreak);
       if (availablePlayers.length < 4) {
@@ -196,30 +199,30 @@
       // Shuffle available players
       const shuffledPlayers = shuffleArray(availablePlayers);
 
-      // Assign players to groups based on group ID
-      if (groupId === "group1") {
-        group1 = shuffledPlayers.slice(0, 4);
-        document.getElementById("group1").innerText = group1.map(player => player.name).join(", ");
+      // Assign players to courts based on court ID
+      if (courtId === "court1") {
+        court1 = shuffledPlayers.slice(0, 4);
+        document.getElementById("court1").innerText = court1.map(player => player.name).join(", ");
       }
-      if (groupId === "group2") {
-        group2 = shuffledPlayers.slice(4, 8);
-        document.getElementById("group2").innerText = group2.map(player => player.name).join(", ");
+      if (courtId === "court2") {
+        court2 = shuffledPlayers.slice(4, 8);
+        document.getElementById("court2").innerText = court2.map(player => player.name).join(", ");
       }
-      if (groupId === "group3") {
-        group3 = shuffledPlayers.slice(8, 12);
-        document.getElementById("group3").innerText = group3.map(player => player.name).join(", ");
+      if (courtId === "court3") {
+        court3 = shuffledPlayers.slice(8, 12);
+        document.getElementById("court3").innerText = court3.map(player => player.name).join(", ");
       }
 
       // Update player times played
-      group1.forEach(player => player.timesPlayed++);
-      group2.forEach(player => player.timesPlayed++);
-      group3.forEach(player => player.timesPlayed++);
+      court1.forEach(player => player.timesPlayed++);
+      court2.forEach(player => player.timesPlayed++);
+      court3.forEach(player => player.timesPlayed++);
 
       // Display updated player list
       generateReadyList();
 
-      // Disable the generate button once a group is generated
-      document.getElementById(`generate${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = true;
+      // Disable the generate button once a court is generated
+      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
     }
 
     function shuffleArray(arr) {
@@ -231,30 +234,30 @@
       return arr;
     }
 
-    function startGroup(groupId) {
-      // Disable the "Generate Group" and "Shuffle Group" buttons for the selected group
-      document.getElementById(`generate${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = true;
-      document.getElementById(`shuffle${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = true;
-      document.getElementById(`startButton${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = true;
-      document.getElementById(`finishButton${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = false;
+    function startCourt(courtId) {
+      // Disable the "Generate Court" and "Shuffle Court" buttons for the selected court
+      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      document.getElementById(`shuffle${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      document.getElementById(`startButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
     }
 
-    function finishGroup(groupId) {
-      // Clear the names from the selected group
-      if (groupId === "group1") {
-        group1 = [];
-        document.getElementById("group1").innerText = "";
+    function finishCourt(courtId) {
+      // Clear the names from the selected court
+      if (courtId === "court1") {
+        court1 = [];
+        document.getElementById("court1").innerText = "";
       }
-      if (groupId === "group2") {
-        group2 = [];
-        document.getElementById("group2").innerText = "";
+      if (courtId === "court2") {
+        court2 = [];
+        document.getElementById("court2").innerText = "";
       }
-      if (groupId === "group3") {
-        group3 = [];
-        document.getElementById("group3").innerText = "";
+      if (courtId === "court3") {
+        court3 = [];
+        document.getElementById("court3").innerText = "";
       }
 
-      // Update the "Times Played" for players in the group
+      // Update the "Times Played" for players in the court
       readyPlayers.forEach(player => {
         player.timesPlayed = 0; // Reset times played
       });
@@ -262,8 +265,8 @@
       // Display updated player list
       generateReadyList();
 
-      // Enable the "Generate Group" and "Start" buttons for the group
-      document.getElementById(`generate${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`).disabled = false;
+      // Enable the "Generate Court" and "Start" buttons for the court
+      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
     }
   </script>
 </body>
