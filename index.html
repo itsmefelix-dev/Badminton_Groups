@@ -29,10 +29,11 @@
   </style>
 </head>
 <body>
-  <h1>Enter 12 Names</h1>
+  <h1>Enter Player Names (Max 40)</h1>
 
   <div id="input-area"></div>
   <button onclick="generateGroups()">Generate Groups</button>
+  <button onclick="addLatecomers()">Add Latecomers</button>
 
   <div class="group">
     <h3>Group 1</h3>
@@ -58,9 +59,10 @@
     let group1 = [];
     let group2 = [];
     let group3 = [];
+    const maxPlayers = 40; // Max players allowed
 
-    // Create 12 input fields for names
-    for (let i = 0; i < 12; i++) {
+    // Create input fields for up to 40 people
+    for (let i = 0; i < maxPlayers; i++) {
       const input = document.createElement("input");
       input.type = "text";
       input.placeholder = `Name ${i + 1}`;
@@ -73,12 +75,9 @@
       let names = [];
 
       // Get names from input fields and check for duplicates
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < maxPlayers; i++) {
         const val = document.getElementById("name" + i).value.trim();
-        if (val === "") {
-          alert("Please fill in all 12 names.");
-          return;
-        }
+        if (val === "") break; // Stop if no more names are entered
         if (names.includes(val)) {
           alert(`Duplicate name found: "${val}". Please enter unique names.`);
           return;
@@ -95,6 +94,40 @@
       group3 = names.slice(8, 12);
 
       // Display groups
+      document.getElementById("group1").innerText = group1.join(", ");
+      document.getElementById("group2").innerText = group2.join(", ");
+      document.getElementById("group3").innerText = group3.join(", ");
+    }
+
+    function addLatecomers() {
+      let latecomerNames = [];
+
+      // Get names of latecomers
+      for (let i = 0; i < maxPlayers; i++) {
+        const val = document.getElementById("name" + i).value.trim();
+        if (val === "") break; // Stop if no more names are entered
+        latecomerNames.push(val);
+      }
+
+      // Check if latecomers have already been added
+      const combinedNames = [...group1, ...group2, ...group3];
+      latecomerNames = latecomerNames.filter(name => !combinedNames.includes(name));
+
+      if (latecomerNames.length === 0) {
+        alert("No new latecomers to add or duplicate names detected.");
+        return;
+      }
+
+      // Add latecomers to the groups
+      combinedNames.push(...latecomerNames);
+      combinedNames = shuffleArray(combinedNames);
+
+      // Reassign groups based on the new list of names
+      group1 = combinedNames.slice(0, 4);
+      group2 = combinedNames.slice(4, 8);
+      group3 = combinedNames.slice(8, 12);
+
+      // Display updated groups
       document.getElementById("group1").innerText = group1.join(", ");
       document.getElementById("group2").innerText = group2.join(", ");
       document.getElementById("group3").innerText = group3.join(", ");
