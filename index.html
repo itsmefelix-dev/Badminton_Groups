@@ -23,21 +23,40 @@
       margin-top: 15px;
       padding: 10px 20px;
     }
+    .group button {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>Enter 12 Numbers</h1>
 
   <div id="input-area"></div>
-  <button onclick="generateGroups()">Shuffle Groups</button>
+  <button onclick="generateGroups()">Shuffle All Groups</button>
 
-  <div class="group" id="group1"></div>
-  <div class="group" id="group2"></div>
-  <div class="group" id="group3"></div>
+  <div class="group">
+    <h3>Group 1</h3>
+    <div id="group1"></div>
+    <button onclick="shuffleGroup('group1')">Shuffle Group 1</button>
+  </div>
+
+  <div class="group">
+    <h3>Group 2</h3>
+    <div id="group2"></div>
+    <button onclick="shuffleGroup('group2')">Shuffle Group 2</button>
+  </div>
+
+  <div class="group">
+    <h3>Group 3</h3>
+    <div id="group3"></div>
+    <button onclick="shuffleGroup('group3')">Shuffle Group 3</button>
+  </div>
 
   <script>
-    // Create 12 input fields
     const inputArea = document.getElementById("input-area");
+    let allNumbers = [];
+
+    // Create 12 input fields
     for (let i = 0; i < 12; i++) {
       const input = document.createElement("input");
       input.type = "number";
@@ -47,6 +66,7 @@
     }
 
     function generateGroups() {
+      allNumbers = [];
       let numbers = [];
 
       // Get numbers from input fields
@@ -59,16 +79,39 @@
         numbers.push(Number(val));
       }
 
-      // Shuffle the array
-      for (let i = numbers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-      }
+      // Shuffle the array of numbers
+      numbers = shuffleArray(numbers);
 
-      // Display the groups
-      document.getElementById("group1").innerText = "Group 1: " + numbers.slice(0, 4).join(", ");
-      document.getElementById("group2").innerText = "Group 2: " + numbers.slice(4, 8).join(", ");
-      document.getElementById("group3").innerText = "Group 3: " + numbers.slice(8, 12).join(", ");
+      // Assign numbers to groups, ensuring no duplication across groups
+      const group1 = numbers.slice(0, 4);
+      const group2 = numbers.slice(4, 8);
+      const group3 = numbers.slice(8, 12);
+
+      // Display groups
+      document.getElementById("group1").innerText = group1.join(", ");
+      document.getElementById("group2").innerText = group2.join(", ");
+      document.getElementById("group3").innerText = group3.join(", ");
+    }
+
+    function shuffleGroup(groupId) {
+      // Get the group elements
+      const group = document.getElementById(groupId);
+      const groupNumbers = group.innerText.split(", ").map(Number);
+      
+      // Shuffle the numbers within the group
+      const shuffled = shuffleArray(groupNumbers);
+
+      // Display shuffled numbers for the selected group
+      group.innerText = shuffled.join(", ");
+    }
+
+    function shuffleArray(arr) {
+      // Shuffle the given array
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]]; // Swap elements
+      }
+      return arr;
     }
   </script>
 </body>
