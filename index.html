@@ -32,34 +32,41 @@
   <h1>Enter Player Names (Max 40)</h1>
 
   <div id="input-area"></div>
-  <button onclick="generateGroups()">Generate Groups</button>
+  <button onclick="generateReadyList()">Generate Ready Player List</button>
   <button onclick="addLatecomers()">Add Latecomers</button>
 
+  <h3>Ready Player List:</h3>
+  <div id="readyPlayerList"></div>
+  
   <div class="group">
     <h3>Group 1</h3>
     <div id="group1"></div>
-    <button onclick="shuffleGroup('group1')">Shuffle Group 1</button>
+    <button id="shuffleGroup1" onclick="shuffleGroup('group1')" disabled>Shuffle Group 1</button>
+    <button onclick="startGame('group1')">Generate Group 1</button>
   </div>
 
   <div class="group">
     <h3>Group 2</h3>
     <div id="group2"></div>
-    <button onclick="shuffleGroup('group2')">Shuffle Group 2</button>
+    <button id="shuffleGroup2" onclick="shuffleGroup('group2')" disabled>Shuffle Group 2</button>
+    <button onclick="startGame('group2')">Generate Group 2</button>
   </div>
 
   <div class="group">
     <h3>Group 3</h3>
     <div id="group3"></div>
-    <button onclick="shuffleGroup('group3')">Shuffle Group 3</button>
+    <button id="shuffleGroup3" onclick="shuffleGroup('group3')" disabled>Shuffle Group 3</button>
+    <button onclick="startGame('group3')">Generate Group 3</button>
   </div>
 
   <script>
     const inputArea = document.getElementById("input-area");
-    let allNames = [];
+    const readyPlayerList = document.getElementById("readyPlayerList");
+    let readyPlayers = [];
     let group1 = [];
     let group2 = [];
     let group3 = [];
-    const maxPlayers = 40; // Max players allowed
+    const maxPlayers = 40;
 
     // Create input fields for up to 40 people
     for (let i = 0; i < maxPlayers; i++) {
@@ -70,33 +77,23 @@
       inputArea.appendChild(input);
     }
 
-    function generateGroups() {
-      allNames = [];
-      let names = [];
+    function generateReadyList() {
+      readyPlayers = [];
+      readyPlayerList.innerHTML = ""; // Clear previous list
 
       // Get names from input fields and check for duplicates
       for (let i = 0; i < maxPlayers; i++) {
         const val = document.getElementById("name" + i).value.trim();
         if (val === "") break; // Stop if no more names are entered
-        if (names.includes(val)) {
+        if (readyPlayers.includes(val)) {
           alert(`Duplicate name found: "${val}". Please enter unique names.`);
           return;
         }
-        names.push(val);
+        readyPlayers.push(val);
       }
 
-      // Shuffle the array of names
-      names = shuffleArray(names);
-
-      // Assign names to groups, ensuring no duplication across groups
-      group1 = names.slice(0, 4);
-      group2 = names.slice(4, 8);
-      group3 = names.slice(8, 12);
-
-      // Display groups
-      document.getElementById("group1").innerText = group1.join(", ");
-      document.getElementById("group2").innerText = group2.join(", ");
-      document.getElementById("group3").innerText = group3.join(", ");
+      // Display the ready player list
+      readyPlayerList.innerHTML = readyPlayers.join(", ");
     }
 
     function addLatecomers() {
@@ -110,27 +107,18 @@
       }
 
       // Check if latecomers have already been added
-      const combinedNames = [...group1, ...group2, ...group3];
-      latecomerNames = latecomerNames.filter(name => !combinedNames.includes(name));
+      latecomerNames = latecomerNames.filter(name => !readyPlayers.includes(name));
 
       if (latecomerNames.length === 0) {
         alert("No new latecomers to add or duplicate names detected.");
         return;
       }
 
-      // Add latecomers to the groups
-      combinedNames.push(...latecomerNames);
-      combinedNames = shuffleArray(combinedNames);
+      // Add latecomers to the ready player list
+      readyPlayers.push(...latecomerNames);
 
-      // Reassign groups based on the new list of names
-      group1 = combinedNames.slice(0, 4);
-      group2 = combinedNames.slice(4, 8);
-      group3 = combinedNames.slice(8, 12);
-
-      // Display updated groups
-      document.getElementById("group1").innerText = group1.join(", ");
-      document.getElementById("group2").innerText = group2.join(", ");
-      document.getElementById("group3").innerText = group3.join(", ");
+      // Display updated ready player list
+      readyPlayerList.innerHTML = readyPlayers.join(", ");
     }
 
     function shuffleGroup(groupId) {
@@ -145,6 +133,35 @@
 
       // Display shuffled names for the selected group
       document.getElementById(groupId).innerText = shuffled.join(", ");
+    }
+
+    function startGame(groupId) {
+      // If there are enough players in the ready list
+      if (readyPlayers.length < 12) {
+        alert("Not enough players to start the game.");
+        return;
+      }
+
+      // Shuffle the ready player list
+      readyPlayers = shuffleArray(readyPlayers);
+
+      // Assign players to groups
+      if (groupId === "group1") group1 = readyPlayers.slice(0, 4);
+      if (groupId === "group2") group2 = readyPlayers.slice(4, 8);
+      if (groupId === "group3") group3 = readyPlayers.slice(8, 12);
+
+      // Display the groups
+      document.getElementById("group1").innerText = group1.join(", ");
+      document.getElementById("group2").innerText = group2.join(", ");
+      document.getElementById("group3").innerText = group3.join(", ");
+
+      // Disable shuffle buttons after generating groups
+      document.getElementById("shuffleGroup1").disabled = true;
+      document.getElementById("shuffleGroup2").disabled = true;
+      document.getElementById("shuffleGroup3").disabled = true;
+
+      // Disable the Generate Group button after starting the game
+      document.querySelectorAll('button').forEach(btn => btn.disabled = true);
     }
 
     function shuffleArray(arr) {
