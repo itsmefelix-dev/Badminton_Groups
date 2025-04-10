@@ -189,40 +189,46 @@
     }
 
     function generateCourt(courtId) {
-      // If there are enough players in the ready list (at least 4)
+      // Check if there are enough available players (at least 4)
       const availablePlayers = readyPlayers.filter(player => !player.onBreak);
       if (availablePlayers.length < 4) {
         alert("Not enough players to start the game. Please add more players.");
         return;
       }
 
-      // Shuffle available players
-      const shuffledPlayers = shuffleArray(availablePlayers);
+      // Generate players for each court
+      let selectedCourt = [];
+      const remainingPlayers = availablePlayers.filter(player => !selectedCourt.includes(player));
 
-      // Assign players to courts based on court ID
       if (courtId === "court1") {
-        court1 = shuffledPlayers.slice(0, 4);
-        document.getElementById("court1").innerText = court1.map(player => player.name).join(", ");
+        selectedCourt = remainingPlayers.slice(0, 4);
+        court1 = selectedCourt;
+        readyPlayers = readyPlayers.filter(player => !court1.includes(player)); // Remove court1 players
+        document.getElementById("court1").innerText = selectedCourt.map(player => player.name).join(", ");
+        document.getElementById("generateCourt1").disabled = true; // Disable generate button
       }
       if (courtId === "court2") {
-        court2 = shuffledPlayers.slice(4, 8);
-        document.getElementById("court2").innerText = court2.map(player => player.name).join(", ");
+        selectedCourt = remainingPlayers.slice(0, 4);
+        court2 = selectedCourt;
+        readyPlayers = readyPlayers.filter(player => !court2.includes(player)); // Remove court2 players
+        document.getElementById("court2").innerText = selectedCourt.map(player => player.name).join(", ");
+        document.getElementById("generateCourt2").disabled = true; // Disable generate button
       }
       if (courtId === "court3") {
-        court3 = shuffledPlayers.slice(8, 12);
-        document.getElementById("court3").innerText = court3.map(player => player.name).join(", ");
+        if (availablePlayers.length < 4) {
+          alert("Not enough players left to generate Court 3.");
+          return;
+        }
+        selectedCourt = remainingPlayers.slice(0, 4);
+        court3 = selectedCourt;
+        readyPlayers = readyPlayers.filter(player => !court3.includes(player)); // Remove court3 players
+        document.getElementById("court3").innerText = selectedCourt.map(player => player.name).join(", ");
+        document.getElementById("generateCourt3").disabled = true; // Disable generate button
       }
 
       // Update player times played
-      court1.forEach(player => player.timesPlayed++);
-      court2.forEach(player => player.timesPlayed++);
-      court3.forEach(player => player.timesPlayed++);
-
-      // Display updated player list
-      generateReadyList();
-
-      // Disable the generate button once a court is generated
-      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      selectedCourt.forEach(player => player.timesPlayed++);
+      generateReadyList(); // Update the ready player list
     }
 
     function shuffleArray(arr) {
@@ -235,9 +241,7 @@
     }
 
     function startCourt(courtId) {
-      // Disable the "Generate Court" and "Shuffle Court" buttons for the selected court
-      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
-      document.getElementById(`shuffle${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      // Enable the Finish button when the court is started
       document.getElementById(`startButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
       document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
     }
@@ -256,17 +260,9 @@
         court3 = [];
         document.getElementById("court3").innerText = "";
       }
-
-      // Update the "Times Played" for players in the court
-      readyPlayers.forEach(player => {
-        player.timesPlayed = 0; // Reset times played
-      });
-
-      // Display updated player list
-      generateReadyList();
-
-      // Enable the "Generate Court" and "Start" buttons for the court
+      // Enable the Generate Court button again
       document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
+      document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
     }
   </script>
 </body>
