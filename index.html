@@ -32,6 +32,7 @@
   <h1>Enter 12 Numbers</h1>
 
   <div id="input-area"></div>
+  <button onclick="generateGroups()">Generate Groups</button>
 
   <div class="group">
     <h3>Group 1</h3>
@@ -54,6 +55,9 @@
   <script>
     const inputArea = document.getElementById("input-area");
     let allNumbers = [];
+    let group1 = [];
+    let group2 = [];
+    let group3 = [];
 
     // Create 12 input fields
     for (let i = 0; i < 12; i++) {
@@ -82,9 +86,9 @@
       numbers = shuffleArray(numbers);
 
       // Assign numbers to groups, ensuring no duplication across groups
-      const group1 = numbers.slice(0, 4);
-      const group2 = numbers.slice(4, 8);
-      const group3 = numbers.slice(8, 12);
+      group1 = numbers.slice(0, 4);
+      group2 = numbers.slice(4, 8);
+      group3 = numbers.slice(8, 12);
 
       // Display groups
       document.getElementById("group1").innerText = group1.join(", ");
@@ -93,15 +97,17 @@
     }
 
     function shuffleGroup(groupId) {
-      // Get the group elements
-      const group = document.getElementById(groupId);
-      const groupNumbers = group.innerText.split(", ").map(Number);
-      
-      // Shuffle the numbers within the group
+      // Get the group arrays
+      let groupNumbers;
+      if (groupId === "group1") groupNumbers = group1;
+      if (groupId === "group2") groupNumbers = group2;
+      if (groupId === "group3") groupNumbers = group3;
+
+      // Shuffle the numbers within the selected group
       const shuffled = shuffleArray(groupNumbers);
 
       // Display shuffled numbers for the selected group
-      group.innerText = shuffled.join(", ");
+      document.getElementById(groupId).innerText = shuffled.join(", ");
     }
 
     function shuffleArray(arr) {
