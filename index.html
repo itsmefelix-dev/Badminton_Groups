@@ -196,12 +196,13 @@
         return;
       }
 
+      // Shuffle the available players to ensure random selection
+  shuffleArray(availablePlayers);
+
       // Generate players for each court
-      let selectedCourt = [];
-      const remainingPlayers = availablePlayers.filter(player => !selectedCourt.includes(player));
+  let selectedCourt = availablePlayers.slice(0, 4); // Pick first 4 after shuffle
 
       if (courtId === "court1") {
-        selectedCourt = remainingPlayers.slice(0, 4);
         court1 = selectedCourt;
         readyPlayers = readyPlayers.filter(player => !court1.includes(player)); // Remove court1 players from ready list
         document.getElementById("court1").innerText = selectedCourt.map(player => player.name).join(", ");
@@ -209,7 +210,6 @@
         document.getElementById("startButton1").disabled = false; // Enable start button
       }
       if (courtId === "court2") {
-        selectedCourt = remainingPlayers.slice(0, 4);
         court2 = selectedCourt;
         readyPlayers = readyPlayers.filter(player => !court2.includes(player)); // Remove court2 players from ready list
         document.getElementById("court2").innerText = selectedCourt.map(player => player.name).join(", ");
@@ -217,11 +217,6 @@
         document.getElementById("startButton2").disabled = false; // Enable start button
       }
       if (courtId === "court3") {
-        if (availablePlayers.length < 4) {
-          alert("Not enough players to generate Court 3.");
-          return;
-        }
-        selectedCourt = remainingPlayers.slice(0, 4);
         court3 = selectedCourt;
         readyPlayers = readyPlayers.filter(player => !court3.includes(player)); // Remove court3 players from ready list
         document.getElementById("court3").innerText = selectedCourt.map(player => player.name).join(", ");
