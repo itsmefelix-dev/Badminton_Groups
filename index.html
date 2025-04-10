@@ -203,16 +203,18 @@
       if (courtId === "court1") {
         selectedCourt = remainingPlayers.slice(0, 4);
         court1 = selectedCourt;
-        readyPlayers = readyPlayers.filter(player => !court1.includes(player)); // Remove court1 players
+        readyPlayers = readyPlayers.filter(player => !court1.includes(player)); // Remove court1 players from ready list
         document.getElementById("court1").innerText = selectedCourt.map(player => player.name).join(", ");
         document.getElementById("generateCourt1").disabled = true; // Disable generate button
+        document.getElementById("startButton1").disabled = false; // Enable start button
       }
       if (courtId === "court2") {
         selectedCourt = remainingPlayers.slice(0, 4);
         court2 = selectedCourt;
-        readyPlayers = readyPlayers.filter(player => !court2.includes(player)); // Remove court2 players
+        readyPlayers = readyPlayers.filter(player => !court2.includes(player)); // Remove court2 players from ready list
         document.getElementById("court2").innerText = selectedCourt.map(player => player.name).join(", ");
         document.getElementById("generateCourt2").disabled = true; // Disable generate button
+        document.getElementById("startButton2").disabled = false; // Enable start button
       }
       if (courtId === "court3") {
         if (availablePlayers.length < 4) {
@@ -221,48 +223,47 @@
         }
         selectedCourt = remainingPlayers.slice(0, 4);
         court3 = selectedCourt;
-        readyPlayers = readyPlayers.filter(player => !court3.includes(player)); // Remove court3 players
+        readyPlayers = readyPlayers.filter(player => !court3.includes(player)); // Remove court3 players from ready list
         document.getElementById("court3").innerText = selectedCourt.map(player => player.name).join(", ");
         document.getElementById("generateCourt3").disabled = true; // Disable generate button
+        document.getElementById("startButton3").disabled = false; // Enable start button
       }
-
-      // Update player times played
-      selectedCourt.forEach(player => player.timesPlayed++);
-      generateReadyList(); // Update the ready player list
-    }
-
-    function shuffleArray(arr) {
-      // Shuffle the given array
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]]; // Swap elements
-      }
-      return arr;
     }
 
     function startCourt(courtId) {
-      // Enable the Finish button when the court is started
+      // Disable all buttons for the court after the game starts
+      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      document.getElementById(`shuffle${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
       document.getElementById(`startButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
       document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
     }
 
     function finishCourt(courtId) {
-      // Clear the names from the selected court
-      if (courtId === "court1") {
-        court1 = [];
-        document.getElementById("court1").innerText = "";
-      }
-      if (courtId === "court2") {
-        court2 = [];
-        document.getElementById("court2").innerText = "";
-      }
-      if (courtId === "court3") {
-        court3 = [];
-        document.getElementById("court3").innerText = "";
-      }
-      // Enable the Generate Court button again
-      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
+      // Reset the court and enable the generate button
+      if (courtId === "court1") court1 = [];
+      if (courtId === "court2") court2 = [];
+      if (courtId === "court3") court3 = [];
+
+      document.getElementById(courtId).innerText = "";
       document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+
+      // Update player times played count
+      const courtPlayers = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
+      courtPlayers.forEach(player => {
+        const playerInReadyList = readyPlayers.find(p => p.name === player.name);
+        if (playerInReadyList) playerInReadyList.timesPlayed++;
+      });
+
+      // Display updated ready player list
+      generateReadyList();
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     }
   </script>
 </body>
