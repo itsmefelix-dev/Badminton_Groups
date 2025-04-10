@@ -218,7 +218,7 @@
       }
       if (courtId === "court3") {
         if (availablePlayers.length < 4) {
-          alert("Not enough players left to generate Court 3.");
+          alert("Not enough players to generate Court 3.");
           return;
         }
         selectedCourt = remainingPlayers.slice(0, 4);
@@ -231,21 +231,19 @@
     }
 
     function startCourt(courtId) {
-      // Disable all buttons for the court after the game starts
-      document.getElementById(`generate${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
-      document.getElementById(`shuffle${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
-      document.getElementById(`startButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
-      document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = false;
+      document.getElementById(`${courtId}`).innerHTML += " (Game Started)";
+      document.getElementById(`startButton${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = true;
+      document.getElementById(`finishButton${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = false;
     }
 
     function finishCourt(courtId) {
-      // Reset the court and enable the generate button
+      // Reset the court and clear the group
       if (courtId === "court1") court1 = [];
       if (courtId === "court2") court2 = [];
       if (courtId === "court3") court3 = [];
 
       document.getElementById(courtId).innerText = "";
-      document.getElementById(`finishButton${courtId.charAt(0).toUpperCase() + courtId.slice(1)}`).disabled = true;
+      document.getElementById(`finishButton${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = true;
 
       // Update player times played count
       const courtPlayers = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
