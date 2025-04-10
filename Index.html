@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Grouping</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+    .group {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Random Groups of 1–12</h1>
+  <button onclick="generateGroups()">Shuffle Groups</button>
+
+  <div class="group" id="group1"></div>
+  <div class="group" id="group2"></div>
+  <div class="group" id="group3"></div>
+
+  <script>
+    function generateGroups() {
+      let numbers = [...Array(12).keys()].map(x => x + 1); // 1 to 12
+      for (let i = numbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+      }
+
+      document.getElementById("group1").innerText = "Group 1: " + numbers.slice(0, 4).join(", ");
+      document.getElementById("group2").innerText = "Group 2: " + numbers.slice(4, 8).join(", ");
+      document.getElementById("group3").innerText = "Group 3: " + numbers.slice(8, 12).join(", ");
+    }
+
+    // auto-generate on page load
+    generateGroups();
+  </script>
+</body>
+</html>
