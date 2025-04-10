@@ -14,10 +14,10 @@
       margin-bottom: 20px;
     }
     input {
-      width: 40px;
+      width: 200px;
       padding: 5px;
       margin: 5px;
-      text-align: center;
+      text-align: left;
     }
     button {
       margin-top: 15px;
@@ -29,7 +29,7 @@
   </style>
 </head>
 <body>
-  <h1>Enter 12 Numbers</h1>
+  <h1>Enter 12 Names</h1>
 
   <div id="input-area"></div>
   <button onclick="generateGroups()">Generate Groups</button>
@@ -54,41 +54,45 @@
 
   <script>
     const inputArea = document.getElementById("input-area");
-    let allNumbers = [];
+    let allNames = [];
     let group1 = [];
     let group2 = [];
     let group3 = [];
 
-    // Create 12 input fields
+    // Create 12 input fields for names
     for (let i = 0; i < 12; i++) {
       const input = document.createElement("input");
-      input.type = "number";
-      input.placeholder = i + 1;
-      input.id = "num" + i;
+      input.type = "text";
+      input.placeholder = `Name ${i + 1}`;
+      input.id = "name" + i;
       inputArea.appendChild(input);
     }
 
     function generateGroups() {
-      allNumbers = [];
-      let numbers = [];
+      allNames = [];
+      let names = [];
 
-      // Get numbers from input fields
+      // Get names from input fields and check for duplicates
       for (let i = 0; i < 12; i++) {
-        const val = document.getElementById("num" + i).value;
+        const val = document.getElementById("name" + i).value.trim();
         if (val === "") {
-          alert("Please fill in all 12 numbers.");
+          alert("Please fill in all 12 names.");
           return;
         }
-        numbers.push(Number(val));
+        if (names.includes(val)) {
+          alert(`Duplicate name found: "${val}". Please enter unique names.`);
+          return;
+        }
+        names.push(val);
       }
 
-      // Shuffle the array of numbers
-      numbers = shuffleArray(numbers);
+      // Shuffle the array of names
+      names = shuffleArray(names);
 
-      // Assign numbers to groups, ensuring no duplication across groups
-      group1 = numbers.slice(0, 4);
-      group2 = numbers.slice(4, 8);
-      group3 = numbers.slice(8, 12);
+      // Assign names to groups, ensuring no duplication across groups
+      group1 = names.slice(0, 4);
+      group2 = names.slice(4, 8);
+      group3 = names.slice(8, 12);
 
       // Display groups
       document.getElementById("group1").innerText = group1.join(", ");
@@ -98,15 +102,15 @@
 
     function shuffleGroup(groupId) {
       // Get the group arrays
-      let groupNumbers;
-      if (groupId === "group1") groupNumbers = group1;
-      if (groupId === "group2") groupNumbers = group2;
-      if (groupId === "group3") groupNumbers = group3;
+      let groupNames;
+      if (groupId === "group1") groupNames = group1;
+      if (groupId === "group2") groupNames = group2;
+      if (groupId === "group3") groupNames = group3;
 
-      // Shuffle the numbers within the selected group
-      const shuffled = shuffleArray(groupNumbers);
+      // Shuffle the names within the selected group
+      const shuffled = shuffleArray(groupNames);
 
-      // Display shuffled numbers for the selected group
+      // Display shuffled names for the selected group
       document.getElementById(groupId).innerText = shuffled.join(", ");
     }
 
