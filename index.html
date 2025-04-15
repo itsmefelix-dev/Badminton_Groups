@@ -93,9 +93,7 @@
     const inputArea = document.getElementById("input-area");
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let court1 = [];
-    let court2 = [];
-    let court3 = [];
+    let court1 = [], court2 = [], court3 = [];
     const maxPlayers = 40;
 
     for (let i = 0; i < maxPlayers; i++) {
@@ -123,7 +121,7 @@
     }
 
     function generateReadyList() {
-      readyPlayers.sort((a, b) => a.name.localeCompare(b.name)); // Fix to stop names from jumping
+      readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
       readyPlayerList.innerHTML = "";
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
@@ -197,6 +195,7 @@
       document.getElementById(courtId).innerText = selectedCourt.map(player => player.name).join(", ");
 
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
+      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = false;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
     }
 
