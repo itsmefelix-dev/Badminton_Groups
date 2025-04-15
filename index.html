@@ -232,22 +232,30 @@
     }
 
     function finishCourt(courtId) {
-      // Reset the court and clear the group
+      let courtPlayers;
+
+      // Set courtPlayers to current court array before clearing it
+      if (courtId === "court1") courtPlayers = court1;
+      if (courtId === "court2") courtPlayers = court2;
+      if (courtId === "court3") courtPlayers = court3;
+
+      // Update player times played count and add them back to readyPlayers
+      courtPlayers.forEach(player => {
+        player.timesPlayed++;
+        readyPlayers.push(player); // Add back to ready list
+      });
+
+      // Reset court
       if (courtId === "court1") court1 = [];
       if (courtId === "court2") court2 = [];
       if (courtId === "court3") court3 = [];
 
       document.getElementById(courtId).innerText = "";
       document.getElementById(`finishButton${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = true;
+      document.getElementById(`generateCourt${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = false;
+      document.getElementById(`shuffleCourt${courtId.charAt(5).toUpperCase() + courtId.slice(6)}`).disabled = true;
 
-      // Update player times played count
-      const courtPlayers = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
-      courtPlayers.forEach(player => {
-        const playerInReadyList = readyPlayers.find(p => p.name === player.name);
-        if (playerInReadyList) playerInReadyList.timesPlayed++;
-      });
-
-      // Display updated ready player list
+      // Refresh ready player list display
       generateReadyList();
     }
 
