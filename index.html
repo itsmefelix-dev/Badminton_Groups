@@ -93,13 +93,15 @@
     const inputArea = document.getElementById("input-area");
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let court1 = [], court2 = [], court3 = [];
+    let court1 = [];
+    let court2 = [];
+    let court3 = [];
     const maxPlayers = 40;
 
     for (let i = 0; i < maxPlayers; i++) {
       const input = document.createElement("input");
       input.type = "text";
-      input.placeholder = `Name ${i + 1}`;
+      input.placeholder = Name ${i + 1};
       input.id = "name" + i;
       inputArea.appendChild(input);
     }
@@ -111,7 +113,7 @@
         const val = document.getElementById("name" + i).value.trim();
         if (val === "") break;
         if (readyPlayers.some(player => player.name === val)) {
-          alert(`Duplicate name found: "${val}". Please enter unique names.`);
+          alert(Duplicate name found: "${val}". Please enter unique names.);
           return;
         }
         readyPlayers.push({ name: val, timesPlayed: 0, onBreak: false });
@@ -121,15 +123,15 @@
     }
 
     function generateReadyList() {
-      readyPlayers.sort((a, b) => a.timesPlayed - b.timesPlayed || a.name.localeCompare(b.name));
+      readyPlayers.sort((a, b) => a.name.localeCompare(b.name)); // Fix to stop names from jumping
       readyPlayerList.innerHTML = "";
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
-        row.innerHTML = `
+        row.innerHTML = 
           <td>${player.name}</td>
           <td>${player.timesPlayed}</td>
           <td><button onclick="toggleOnBreak('${player.name}')">${player.onBreak ? "Back from Break" : "On Break"}</button></td>
-        `;
+        ;
         if (player.onBreak) row.classList.add("on-break");
       });
     }
@@ -195,14 +197,13 @@
       document.getElementById(courtId).innerText = selectedCourt.map(player => player.name).join(", ");
 
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
-      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = false;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
     }
 
     function startCourt(courtId) {
-      document.getElementById(`${courtId}`).innerHTML += " (Game Started)";
-      document.getElementById(`startButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = false;
+      document.getElementById(${courtId}).innerHTML += " (Game Started)";
+      document.getElementById(startButton${courtId.charAt(5)}).disabled = true;
+      document.getElementById(finishButton${courtId.charAt(5)}).disabled = false;
     }
 
     function finishCourt(courtId) {
@@ -221,9 +222,9 @@
       if (courtId === "court3") court3 = [];
 
       document.getElementById(courtId).innerText = "";
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`generateCourt${courtId.charAt(5)}`).disabled = false;
-      document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
+      document.getElementById(finishButton${courtId.charAt(5)}).disabled = true;
+      document.getElementById(generateCourt${courtId.charAt(5)}).disabled = false;
+      document.getElementById(shuffleCourt${courtId.charAt(5)}).disabled = true;
 
       generateReadyList();
     }
