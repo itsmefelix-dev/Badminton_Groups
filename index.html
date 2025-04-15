@@ -121,7 +121,7 @@
     }
 
     function generateReadyList() {
-      readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
+      readyPlayers.sort((a, b) => a.timesPlayed - b.timesPlayed || a.name.localeCompare(b.name));
       readyPlayerList.innerHTML = "";
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
