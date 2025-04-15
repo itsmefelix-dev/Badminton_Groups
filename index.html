@@ -59,12 +59,9 @@
         <th>Action</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- Player list will be populated here -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
-  <!-- Court 1 -->
   <div class="court">
     <h3>Court 1</h3>
     <div id="court1"></div>
@@ -74,7 +71,6 @@
     <button onclick="finishCourt('court1')" id="finishButton1" disabled>Finish Court 1</button>
   </div>
 
-  <!-- Court 2 -->
   <div class="court">
     <h3>Court 2</h3>
     <div id="court2"></div>
@@ -84,7 +80,6 @@
     <button onclick="finishCourt('court2')" id="finishButton2" disabled>Finish Court 2</button>
   </div>
 
-  <!-- Court 3 -->
   <div class="court">
     <h3>Court 3</h3>
     <div id="court3"></div>
@@ -103,7 +98,6 @@
     let court3 = [];
     const maxPlayers = 40;
 
-    // Create input fields for up to 40 people
     for (let i = 0; i < maxPlayers; i++) {
       const input = document.createElement("input");
       input.type = "text";
@@ -115,10 +109,9 @@
     function createInitialPlayerList() {
       readyPlayers = [];
 
-      // Get names from input fields and check for duplicates
       for (let i = 0; i < maxPlayers; i++) {
         const val = document.getElementById("name" + i).value.trim();
-        if (val === "") break; // Stop if no more names are entered
+        if (val === "") break;
         if (readyPlayers.some(player => player.name === val)) {
           alert(`Duplicate name found: "${val}". Please enter unique names.`);
           return;
@@ -130,8 +123,8 @@
     }
 
     function generateReadyList() {
-      readyPlayerList.innerHTML = ""; // Clear previous list
-      // Display the ready player list
+      readyPlayers.sort((a, b) => a.name.localeCompare(b.name)); // Fix to stop names from jumping
+      readyPlayerList.innerHTML = "";
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
         row.innerHTML = `
@@ -147,22 +140,17 @@
       const player = readyPlayers.find(p => p.name === playerName);
       if (player) {
         player.onBreak = !player.onBreak;
-        // Update player status in the table
         generateReadyList();
       }
     }
 
     function addLatecomers() {
       let latecomerNames = [];
-
-      // Get names of latecomers
       for (let i = 0; i < maxPlayers; i++) {
         const val = document.getElementById("name" + i).value.trim();
-        if (val === "") break; // Stop if no more names are entered
+        if (val === "") break;
         latecomerNames.push(val);
       }
-
-      // Check if latecomers have already been added
       latecomerNames = latecomerNames.filter(name => !readyPlayers.some(p => p.name === name));
 
       if (latecomerNames.length === 0) {
@@ -170,27 +158,21 @@
         return;
       }
 
-      // Add latecomers to the ready player list
       latecomerNames.forEach(name => {
         readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
       });
 
-      // Display updated ready player list
       generateReadyList();
     }
 
     function shuffleCourt(courtId) {
-      // Get the court arrays
       let courtNames;
       if (courtId === "court1") courtNames = court1;
       if (courtId === "court2") courtNames = court2;
       if (courtId === "court3") courtNames = court3;
 
-      // Shuffle the names within the selected court
       const shuffled = shuffleArray(courtNames);
-
-      // Display shuffled names for the selected court
-      document.getElementById(courtId).innerText = shuffled.join(", ");
+      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
     }
 
     function generateCourt(courtId) {
