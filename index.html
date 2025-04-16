@@ -141,6 +141,11 @@
       const minPlayed = available[0].timesPlayed;
       const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
 
+      for (let i = eligible.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+      }
+
       let bestGroup = null;
       let bestScore = Infinity;
 
@@ -160,6 +165,7 @@
       }
 
       const groups = combinations(eligible, 4);
+      shuffleArray(groups);
 
       for (const group of groups) {
         const names = group.map(p => p.name).sort().join(", ");
@@ -170,15 +176,22 @@
         const min = Math.min(...times);
         const diff = max - min;
 
-        if (diff <= 2 && max <= 6 && min >= 4) {
+        if (diff <= 2) {
           const score = times.reduce((a, b) => a + b, 0);
-          if (score < bestScore) {
+          if (score < bestScore || !bestGroup) {
             bestScore = score;
             bestGroup = group;
           }
         }
       }
 
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+          }
+        }
+      
       const finalGroup = bestGroup || eligible.slice(0, 4);
 
       court1 = finalGroup;
