@@ -139,12 +139,52 @@
 
       available.sort((a, b) => a.timesPlayed - b.timesPlayed);
       const minPlayed = available[0].timesPlayed;
-      const group = available.filter(p => p.timesPlayed <= minPlayed + 2).slice(0, 4);
+      const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
 
-      court1 = group;
-      waitingQueue = waitingQueue.filter(p => !group.includes(p));
+      let bestGroup = null;
+      let bestScore = Infinity;
 
-      document.getElementById(courtId).innerText = group.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
+      function combinations(arr, k) {
+        const result = [];
+        const combine = (start, combo) => {
+          if (combo.length === k) {
+            result.push(combo);
+            return;
+          }
+          for (let i = start; i < arr.length; i++) {
+            combine(i + 1, combo.concat([arr[i]]));
+          }
+        };
+        combine(0, []);
+        return result;
+      }
+
+      const groups = combinations(eligible, 4);
+
+      for (const group of groups) {
+        const names = group.map(p => p.name).sort().join(", ");
+        if (matchHistorySet.has(names)) continue;
+
+        const times = group.map(p => p.timesPlayed);
+        const max = Math.max(...times);
+        const min = Math.min(...times);
+        const diff = max - min;
+
+        if (diff <= 2 && max <= 6 && min >= 4) {
+          const score = times.reduce((a, b) => a + b, 0);
+          if (score < bestScore) {
+            bestScore = score;
+            bestGroup = group;
+          }
+        }
+      }
+
+      const finalGroup = bestGroup || eligible.slice(0, 4);
+
+      court1 = finalGroup;
+      waitingQueue = waitingQueue.filter(p => !finalGroup.includes(p));
+
+      document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
     }
@@ -175,8 +215,9 @@
       players.sort((a, b) => a.name.localeCompare(b.name));
       const names = players.map(p => `${p.name} (${p.timesPlayed})`);
       const historyKey = names.join(", ");
-      if (!matchHistorySet.has(historyKey)) {
-        matchHistorySet.add(historyKey);
+      const simpleKey = players.map(p => p.name).sort().join(", ");
+      if (!matchHistorySet.has(simpleKey)) {
+        matchHistorySet.add(simpleKey);
         const entry = document.createElement("div");
         entry.textContent = historyKey;
         document.getElementById("matchHistory").appendChild(entry);
