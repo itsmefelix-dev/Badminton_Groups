@@ -96,10 +96,11 @@
       const name = input.value.trim();
       if (!name) return;
 
-      if (readyPlayers.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        alert(`Duplicate name found: "${name}". Please enter a unique name.`);
-        return;
-      }
+      const nameLower = name.toLowerCase();
+      if (readyPlayers.some(p => p.name.toLowerCase() === nameLower)) {
+      alert(`Name "${name}" already exists in the list.`);
+      return;
+    }
 
       readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
       input.value = "";
