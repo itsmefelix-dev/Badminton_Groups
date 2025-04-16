@@ -78,46 +78,30 @@
     <button onclick="finishCourt('court1')" id="finishButton1" disabled>Finish Court 1</button>
   </div>
 
-  <div class="court">
-    <h3>Court 2</h3>
-    <div id="court2"></div>
-    <button id="shuffleCourt2" onclick="shuffleCourt('court2')" disabled>Shuffle Court 2</button>
-    <button onclick="generateCourt('court2')" id="generateCourt2">Generate Court 2</button>
-    <button onclick="startCourt('court2')" id="startButton2" disabled>Start Court 2</button>
-    <button onclick="finishCourt('court2')" id="finishButton2" disabled>Finish Court 2</button>
-  </div>
-
-  <div class="court">
-    <h3>Court 3</h3>
-    <div id="court3"></div>
-    <button id="shuffleCourt3" onclick="shuffleCourt('court3')" disabled>Shuffle Court 3</button>
-    <button onclick="generateCourt('court3')" id="generateCourt3">Generate Court 3</button>
-    <button onclick="startCourt('court3')" id="startButton3" disabled>Start Court 3</button>
-    <button onclick="finishCourt('court3')" id="finishButton3" disabled>Finish Court 3</button>
-  </div>
-
   <h3>Match History:</h3>
   <div id="matchHistory"></div>
 
   <script>
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let court1 = [], court2 = [], court3 = [];
+    let waitingQueue = []; // 🔄 NEW: to manage rotation
+    let court1 = [];
 
     const skillMap = { Beginner: 1, Intermediate: 2, Advanced: 3, Pro: 4 };
     let matchHistorySet = new Set();
-    let playedCombinations = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
       const newSkill = document.getElementById("newPlayerSkill").value;
-      const allPlayers = [...readyPlayers, ...court1, ...court2, ...court3];
+      const allPlayers = [...readyPlayers, ...court1];
       if (allPlayers.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
         alert(`Duplicate name found: "${newName}" already exists.`);
         return;
       }
       if (newName !== "") {
-        readyPlayers.push({ name: newName, skill: newSkill, timesPlayed: 0, onBreak: false });
+        const newPlayer = { name: newName, skill: newSkill, timesPlayed: 0, onBreak: false };
+        readyPlayers.push(newPlayer);
+        waitingQueue.push(newPlayer);
         generateReadyList();
       }
       document.getElementById("newPlayerName").value = "";
@@ -147,68 +131,19 @@
     }
 
     function generateCourt(courtId) {
-      const availablePlayers = readyPlayers.filter(p => !p.onBreak);
-      if (availablePlayers.length < 4) {
+      const available = waitingQueue.filter(p => !p.onBreak);
+      if (available.length < 4) {
         alert("Not enough players to start the game. Please add more players.");
         return;
       }
 
-      let attempt = 0;
-      let selectedCourt = smartBalancedGroup(availablePlayers);
-      let names = selectedCourt.map(p => p.name).sort().join(", ");
+      const group = available.slice(0, 4);
+      court1 = group;
+      waitingQueue = waitingQueue.filter(p => !group.includes(p));
 
-      while (playedCombinations.has(names) && attempt < 50) {
-        selectedCourt = smartBalancedGroup(availablePlayers);
-        names = selectedCourt.map(p => p.name).sort().join(", ");
-        attempt++;
-      }
-
-      if (playedCombinations.has(names)) {
-        console.warn("Repeated group used due to exhaustion.");
-      }
-
-      playedCombinations.add(names);
-
-      if (courtId === "court1") court1 = selectedCourt;
-      else if (courtId === "court2") court2 = selectedCourt;
-      else if (courtId === "court3") court3 = selectedCourt;
-
-      readyPlayers = readyPlayers.filter(p => !selectedCourt.includes(p));
-      document.getElementById(courtId).innerText = selectedCourt.map(p => p.name).join(", ");
-
+      document.getElementById(courtId).innerText = group.map(p => p.name).join(", ");
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
-    }
-
-    function smartBalancedGroup(players) {
-      const groups = [];
-      for (let i = 0; i < players.length - 3; i++) {
-        for (let j = i + 1; j < players.length - 2; j++) {
-          for (let k = j + 1; k < players.length - 1; k++) {
-            for (let l = k + 1; l < players.length; l++) {
-              const group = [players[i], players[j], players[k], players[l]];
-              const sortedBySkill = group.slice().sort((a, b) => skillMap[a.skill] - skillMap[b.skill]);
-              const team1 = [sortedBySkill[0], sortedBySkill[3]];
-              const team2 = [sortedBySkill[1], sortedBySkill[2]];
-              const team1Skill = team1.reduce((sum, p) => sum + skillMap[p.skill], 0);
-              const team2Skill = team2.reduce((sum, p) => sum + skillMap[p.skill], 0);
-              const skillDiff = Math.abs(team1Skill - team2Skill);
-              const timesPlayedAvg = group.reduce((s, p) => s + p.timesPlayed, 0) / 4;
-              const playDiff = group.reduce((s, p) => s + Math.abs(p.timesPlayed - timesPlayedAvg), 0);
-              const score = skillDiff * 2 + playDiff;
-              groups.push({ group, score });
-            }
-          }
-        }
-      }
-      groups.sort((a, b) => a.score - b.score);
-      return groups[0]?.group || players.slice(0, 4);
-    }
-
-    function shuffleCourt(courtId) {
-      const courtNames = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
-      const shuffled = shuffleArray(courtNames);
-      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
     }
 
     function startCourt(courtId) {
@@ -218,27 +153,18 @@
     }
 
     function finishCourt(courtId) {
-      let courtPlayers;
-      if (courtId === "court1") courtPlayers = court1;
-      else if (courtId === "court2") courtPlayers = court2;
-      else courtPlayers = court3;
-
+      const courtPlayers = court1;
       courtPlayers.forEach(player => {
         player.timesPlayed++;
-        readyPlayers.push(player);
+        waitingQueue.push(player); // 👈 rotate them to back of queue
       });
-
       updateMatchHistory(courtPlayers);
 
-      if (courtId === "court1") court1 = [];
-      else if (courtId === "court2") court2 = [];
-      else court3 = [];
-
+      court1 = [];
       document.getElementById(courtId).innerText = "";
       document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
       document.getElementById(`generateCourt${courtId.charAt(5)}`).disabled = false;
       document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
-
       generateReadyList();
     }
 
@@ -246,21 +172,12 @@
       players.sort((a, b) => a.name.localeCompare(b.name));
       const names = players.map(p => p.name);
       const historyKey = names.join(", ");
-
       if (!matchHistorySet.has(historyKey)) {
         matchHistorySet.add(historyKey);
         const entry = document.createElement("div");
         entry.textContent = historyKey;
         document.getElementById("matchHistory").appendChild(entry);
       }
-    }
-
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
     }
   </script>
 </body>
