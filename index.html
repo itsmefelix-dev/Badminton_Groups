@@ -97,10 +97,16 @@
       if (!name) return;
 
       const nameLower = name.toLowerCase();
-      if (readyPlayers.some(p => p.name.toLowerCase() === nameLower)) {
-      alert(`Name "${name}" already exists in the list.`);
-      return;
-    }
+
+      const isDuplicate = readyPlayers.some(p => p.name.toLowerCase() === nameLower) ||
+                          court1.some(p => p.name.toLowerCase() === nameLower) ||
+                          court2.some(p => p.name.toLowerCase() === nameLower) ||
+                          court3.some(p => p.name.toLowerCase() === nameLower);
+      
+      if (isDuplicate) {
+        alert(`Name "${name}" already exists in the list or is currently playing.`);
+        return;
+  }
 
       readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
       input.value = "";
