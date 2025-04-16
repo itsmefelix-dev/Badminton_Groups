@@ -14,13 +14,11 @@
       margin-bottom: 20px;
     }
     input {
-      width: 200px;
+      width: 300px;
       padding: 5px;
-      margin: 5px;
-      text-align: left;
+      margin-right: 10px;
     }
     button {
-      margin-top: 15px;
       padding: 10px 20px;
     }
     table {
@@ -44,11 +42,10 @@
   </style>
 </head>
 <body>
-  <h1>Enter Player Names (Max 40)</h1>
+  <h1>Add Player Name</h1>
 
-  <div id="input-area"></div>
-  <button onclick="createInitialPlayerList()">Generate Ready Player List</button>
-  <button onclick="addLatecomers()">Add Latecomers</button>
+  <input type="text" id="nameInput" placeholder="Enter player name" />
+  <button onclick="addPlayer()">Add to Ready Player List</button>
 
   <h3>Ready Player List:</h3>
   <table id="readyPlayerList">
@@ -90,41 +87,28 @@
   </div>
 
   <script>
-    const inputArea = document.getElementById("input-area");
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let court1 = [];
-    let court2 = [];
-    let court3 = [];
-    const maxPlayers = 40;
+    let court1 = [], court2 = [], court3 = [];
 
-    for (let i = 0; i < maxPlayers; i++) {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = `Name ${i + 1}`;
-      input.id = "name" + i;
-      inputArea.appendChild(input);
-    }
+    function addPlayer() {
+      const input = document.getElementById("nameInput");
+      const name = input.value.trim();
+      if (!name) return;
 
-    function createInitialPlayerList() {
-      readyPlayers = [];
-
-      for (let i = 0; i < maxPlayers; i++) {
-        const val = document.getElementById("name" + i).value.trim();
-        if (val === "") break;
-        if (readyPlayers.some(player => player.name === val)) {
-          alert(`Duplicate name found: "${val}". Please enter unique names.`);
-          return;
-        }
-        readyPlayers.push({ name: val, timesPlayed: 0, onBreak: false });
+      if (readyPlayers.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        alert(`Duplicate name found: "${name}". Please enter a unique name.`);
+        return;
       }
 
+      readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
+      input.value = "";
       generateReadyList();
     }
 
     function generateReadyList() {
-      readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
       readyPlayerList.innerHTML = "";
+      readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
         row.innerHTML = `
@@ -144,97 +128,71 @@
       }
     }
 
-    function addLatecomers() {
-      let latecomerNames = [];
-      for (let i = 0; i < maxPlayers; i++) {
-        const val = document.getElementById("name" + i).value.trim();
-        if (val === "") break;
-        latecomerNames.push(val);
-      }
-      latecomerNames = latecomerNames.filter(name => !readyPlayers.some(p => p.name === name));
-
-      if (latecomerNames.length === 0) {
-        alert("No new latecomers to add or duplicate names detected.");
-        return;
-      }
-
-      latecomerNames.forEach(name => {
-        readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
-      });
-
-      generateReadyList();
-    }
-
-    function shuffleCourt(courtId) {
-      let courtNames;
-      if (courtId === "court1") courtNames = court1;
-      if (courtId === "court2") courtNames = court2;
-      if (courtId === "court3") courtNames = court3;
-
-      const shuffled = shuffleArray([...courtNames]);
-      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
-    }
-
-    function generateCourt(courtId) {
-      const availablePlayers = readyPlayers.filter(player => !player.onBreak);
-      if (availablePlayers.length < 4) {
-        alert("Not enough players to start the game. Please add more players.");
-        return;
-      }
-
-      shuffleArray(availablePlayers);
-      const selectedCourt = availablePlayers.slice(0, 4);
-
-      if (courtId === "court1") {
-        court1 = selectedCourt;
-      } else if (courtId === "court2") {
-        court2 = selectedCourt;
-      } else if (courtId === "court3") {
-        court3 = selectedCourt;
-      }
-
-      readyPlayers = readyPlayers.filter(player => !selectedCourt.includes(player));
-      document.getElementById(courtId).innerText = selectedCourt.map(player => player.name).join(", ");
-
-      document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
-      document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
-    }
-
-    function startCourt(courtId) {
-      document.getElementById(courtId).innerHTML += " (Game Started)";
-      document.getElementById(`startButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = false;
-    }
-
-    function finishCourt(courtId) {
-      let courtPlayers;
-      if (courtId === "court1") courtPlayers = court1;
-      if (courtId === "court2") courtPlayers = court2;
-      if (courtId === "court3") courtPlayers = court3;
-
-      courtPlayers.forEach(player => {
-        player.timesPlayed++;
-        readyPlayers.push(player);
-      });
-
-      if (courtId === "court1") court1 = [];
-      if (courtId === "court2") court2 = [];
-      if (courtId === "court3") court3 = [];
-
-      document.getElementById(courtId).innerText = "";
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`generateCourt${courtId.charAt(5)}`).disabled = false;
-      document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
-
-      generateReadyList();
-    }
-
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
       return array;
+    }
+
+    function shuffleCourt(courtId) {
+      let courtNames = getCourtArray(courtId);
+      const shuffled = shuffleArray([...courtNames]);
+      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
+    }
+
+    function generateCourt(courtId) {
+      const availablePlayers = readyPlayers.filter(p => !p.onBreak);
+      if (availablePlayers.length < 4) {
+        alert("Not enough players to start the game.");
+        return;
+      }
+
+      shuffleArray(availablePlayers);
+      const selectedCourt = availablePlayers.slice(0, 4);
+      setCourtArray(courtId, selectedCourt);
+      readyPlayers = readyPlayers.filter(p => !selectedCourt.includes(p));
+
+      document.getElementById(courtId).innerText = selectedCourt.map(p => p.name).join(", ");
+      document.getElementById("generate" + capitalize(courtId)).disabled = true;
+      document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
+    }
+
+    function startCourt(courtId) {
+      document.getElementById(courtId).innerHTML += " (Game Started)";
+      document.getElementById("startButton" + courtId.charAt(5)).disabled = true;
+      document.getElementById("finishButton" + courtId.charAt(5)).disabled = false;
+    }
+
+    function finishCourt(courtId) {
+      const courtPlayers = getCourtArray(courtId);
+      courtPlayers.forEach(p => {
+        p.timesPlayed++;
+        readyPlayers.push(p);
+      });
+      setCourtArray(courtId, []);
+      document.getElementById(courtId).innerText = "";
+      document.getElementById("finishButton" + courtId.charAt(5)).disabled = true;
+      document.getElementById("generate" + capitalize(courtId)).disabled = false;
+      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = true;
+      generateReadyList();
+    }
+
+    function getCourtArray(courtId) {
+      if (courtId === "court1") return court1;
+      if (courtId === "court2") return court2;
+      if (courtId === "court3") return court3;
+    }
+
+    function setCourtArray(courtId, arr) {
+      if (courtId === "court1") court1 = arr;
+      if (courtId === "court2") court2 = arr;
+      if (courtId === "court3") court3 = arr;
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
     }
   </script>
 </body>
