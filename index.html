@@ -96,6 +96,9 @@
     <button onclick="finishCourt('court3')" id="finishButton3" disabled>Finish Court 3</button>
   </div>
 
+  <h3>Match History:</h3>
+  <div id="matchHistory"></div>
+  
   <script>
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
@@ -109,6 +112,8 @@
       "Advanced": 3,
       "Pro": 4
     };
+
+    let matchHistorySet = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
@@ -218,6 +223,8 @@
         readyPlayers.push(player);
       });
 
+      updateMatchHistory(courtPlayers);
+      
       if (courtId === "court1") court1 = [];
       if (courtId === "court2") court2 = [];
       if (courtId === "court3") court3 = [];
@@ -228,6 +235,19 @@
       document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
 
       generateReadyList();
+    }
+
+    function updateMatchHistory(players) {
+      players.sort((a, b) => a.name.localeCompare(b.name));
+      const names = players.map(p => p.name);
+      const historyKey = names.join(", ");
+
+      if (!matchHistorySet.has(historyKey)) {
+        matchHistorySet.add(historyKey);
+        const entry = document.createElement("div");
+        entry.textContent = historyKey;
+        document.getElementById("matchHistory").appendChild(entry);
+      }
     }
 
     function shuffleArray(array) {
