@@ -174,16 +174,20 @@
         return;
       }
 
-      const selectedCourt = autoRebalancePlayers(availablePlayers);
+      let selectedCourt = autoRebalancePlayers(availablePlayers);
+      let names = selectedCourt.map(player => player.name).join(", ");
 
-      // Check if the generated combination has been played before
-      const names = selectedCourt.map(player => player.name).join(", ");
-      if (playedCombinations.has(names)) {
-        // If the combination was already played, re-generate until unique
-        return generateCourt(courtId);
+      let attempt = 0;
+      while (playedCombinations.has(names) && attempt < 50) {
+        selectedCourt = autoRebalancePlayers(availablePlayers);
+        names = selectedCourt.map(player => player.name).join(", ");
+        attempt++;
       }
 
-      // Mark this combination as played
+      if (playedCombinations.has(names)) {
+        console.warn("Repeated group used due to exhaustion.");
+      }
+
       playedCombinations.add(names);
 
       if (courtId === "court1") court1 = selectedCourt;
@@ -208,17 +212,28 @@
               const playCounts = group.map(p => p.timesPlayed);
               const maxPlayed = Math.max(...playCounts);
               const minPlayed = Math.min(...playCounts);
-
-              // Reject group if the gap is more than 2
               if (maxPlayed - minPlayed > 2) continue;
-              
-              const totalSkill = group.reduce((sum, p) => sum + skillMap[p.skill], 0);
-              const teamDiff = Math.abs((skillMap[group[0].skill] + skillMap[group[1].skill]) - (skillMap[group[2].skill] + skillMap[group[3].skill]));
+
+              const teamOptions = [
+                [[0, 1], [2, 3]],
+                [[0, 2], [1, 3]],
+                [[0, 3], [1, 2]]
+              ];
+
+              let bestTeamDiff = Infinity;
+              for (const [teamA, teamB] of teamOptions) {
+                const teamASkill = teamA.reduce((sum, idx) => sum + skillMap[group[idx].skill], 0);
+                const teamBSkill = teamB.reduce((sum, idx) => sum + skillMap[group[idx].skill], 0);
+                const diff = Math.abs(teamASkill - teamBSkill);
+                if (diff < bestTeamDiff) bestTeamDiff = diff;
+              }
+
               const hasMixedSkill = group.some(p => skillMap[p.skill] >= 3) && group.some(p => skillMap[p.skill] === 1);
               const penalty = hasMixedSkill ? 10 : 0;
               const avgPlayed = group.reduce((sum, p) => sum + p.timesPlayed, 0) / 4;
-              const playDiff = group.reduce((sum, p) => sum + Math.abs(p.timesPlayed - avgPlayed), 0); // smaller is better
-              const totalScore = teamDiff + penalty + playDiff * 1.5; // Weight playDiff with multiplier
+              const playDiff = group.reduce((sum, p) => sum + Math.abs(p.timesPlayed - avgPlayed), 0);
+              const totalScore = bestTeamDiff + penalty + playDiff * 1.5;
+
               combos.push({ group, score: totalScore });
             }
           }
@@ -227,9 +242,8 @@
       if (combos.length > 0) {
         combos.sort((a, b) => a.score - b.score);
         return combos[0].group;
-    }        
+      }
 
-      // Fallback: If no balanced group found (too strict), allow random with warning
       console.warn("No group found with playtime gap ≤ 2. Picking random group.");
       return shuffleArray(players).slice(0, 4);
     }
@@ -252,7 +266,7 @@
       });
 
       updateMatchHistory(courtPlayers);
-      
+
       if (courtId === "court1") court1 = [];
       if (courtId === "court2") court2 = [];
       if (courtId === "court3") court3 = [];
