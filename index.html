@@ -98,39 +98,28 @@
 
   <h3>Match History:</h3>
   <div id="matchHistory"></div>
-  
+
   <script>
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let court1 = [];
-    let court2 = [];
-    let court3 = [];
+    let court1 = [], court2 = [], court3 = [];
 
-    const skillMap = {
-      "Beginner": 1,
-      "Intermediate": 2,
-      "Advanced": 3,
-      "Pro": 4
-    };
-
+    const skillMap = { Beginner: 1, Intermediate: 2, Advanced: 3, Pro: 4 };
     let matchHistorySet = new Set();
     let playedCombinations = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
       const newSkill = document.getElementById("newPlayerSkill").value;
-
       const allPlayers = [...readyPlayers, ...court1, ...court2, ...court3];
-      if (allPlayers.some(player => player.name.toLowerCase() === newName.toLowerCase())) {
+      if (allPlayers.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
         alert(`Duplicate name found: "${newName}" already exists.`);
         return;
       }
-
       if (newName !== "") {
         readyPlayers.push({ name: newName, skill: newSkill, timesPlayed: 0, onBreak: false });
         generateReadyList();
       }
-
       document.getElementById("newPlayerName").value = "";
     }
 
@@ -157,30 +146,20 @@
       }
     }
 
-    function shuffleCourt(courtId) {
-      let courtNames;
-      if (courtId === "court1") courtNames = court1;
-      if (courtId === "court2") courtNames = court2;
-      if (courtId === "court3") courtNames = court3;
-
-      const shuffled = shuffleArray(courtNames);
-      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
-    }
-
     function generateCourt(courtId) {
-      const availablePlayers = readyPlayers.filter(player => !player.onBreak);
+      const availablePlayers = readyPlayers.filter(p => !p.onBreak);
       if (availablePlayers.length < 4) {
         alert("Not enough players to start the game. Please add more players.");
         return;
       }
 
-      let selectedCourt = autoRebalancePlayers(availablePlayers);
-      let names = selectedCourt.map(player => player.name).join(", ");
-
       let attempt = 0;
+      let selectedCourt = smartBalancedGroup(availablePlayers);
+      let names = selectedCourt.map(p => p.name).sort().join(", ");
+
       while (playedCombinations.has(names) && attempt < 50) {
-        selectedCourt = autoRebalancePlayers(availablePlayers);
-        names = selectedCourt.map(player => player.name).join(", ");
+        selectedCourt = smartBalancedGroup(availablePlayers);
+        names = selectedCourt.map(p => p.name).sort().join(", ");
         attempt++;
       }
 
@@ -194,58 +173,42 @@
       else if (courtId === "court2") court2 = selectedCourt;
       else if (courtId === "court3") court3 = selectedCourt;
 
-      readyPlayers = readyPlayers.filter(player => !selectedCourt.includes(player));
-      document.getElementById(courtId).innerText = selectedCourt.map(player => player.name).join(", ");
+      readyPlayers = readyPlayers.filter(p => !selectedCourt.includes(p));
+      document.getElementById(courtId).innerText = selectedCourt.map(p => p.name).join(", ");
 
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
     }
 
-    function autoRebalancePlayers(players) {
-      const combos = [];
+    function smartBalancedGroup(players) {
+      const groups = [];
       for (let i = 0; i < players.length - 3; i++) {
         for (let j = i + 1; j < players.length - 2; j++) {
           for (let k = j + 1; k < players.length - 1; k++) {
             for (let l = k + 1; l < players.length; l++) {
               const group = [players[i], players[j], players[k], players[l]];
-
-              const playCounts = group.map(p => p.timesPlayed);
-              const maxPlayed = Math.max(...playCounts);
-              const minPlayed = Math.min(...playCounts);
-              if (maxPlayed - minPlayed > 2) continue;
-
-              const teamOptions = [
-                [[0, 1], [2, 3]],
-                [[0, 2], [1, 3]],
-                [[0, 3], [1, 2]]
-              ];
-
-              let bestTeamDiff = Infinity;
-              for (const [teamA, teamB] of teamOptions) {
-                const teamASkill = teamA.reduce((sum, idx) => sum + skillMap[group[idx].skill], 0);
-                const teamBSkill = teamB.reduce((sum, idx) => sum + skillMap[group[idx].skill], 0);
-                const diff = Math.abs(teamASkill - teamBSkill);
-                if (diff < bestTeamDiff) bestTeamDiff = diff;
-              }
-
-              const hasMixedSkill = group.some(p => skillMap[p.skill] >= 3) && group.some(p => skillMap[p.skill] === 1);
-              const penalty = hasMixedSkill ? 10 : 0;
-              const avgPlayed = group.reduce((sum, p) => sum + p.timesPlayed, 0) / 4;
-              const playDiff = group.reduce((sum, p) => sum + Math.abs(p.timesPlayed - avgPlayed), 0);
-              const totalScore = bestTeamDiff + penalty + playDiff * 1.5;
-
-              combos.push({ group, score: totalScore });
+              const sortedBySkill = group.slice().sort((a, b) => skillMap[a.skill] - skillMap[b.skill]);
+              const team1 = [sortedBySkill[0], sortedBySkill[3]];
+              const team2 = [sortedBySkill[1], sortedBySkill[2]];
+              const team1Skill = team1.reduce((sum, p) => sum + skillMap[p.skill], 0);
+              const team2Skill = team2.reduce((sum, p) => sum + skillMap[p.skill], 0);
+              const skillDiff = Math.abs(team1Skill - team2Skill);
+              const timesPlayedAvg = group.reduce((s, p) => s + p.timesPlayed, 0) / 4;
+              const playDiff = group.reduce((s, p) => s + Math.abs(p.timesPlayed - timesPlayedAvg), 0);
+              const score = skillDiff * 2 + playDiff;
+              groups.push({ group, score });
             }
           }
         }
       }
-      if (combos.length > 0) {
-        combos.sort((a, b) => a.score - b.score);
-        return combos[0].group;
-      }
+      groups.sort((a, b) => a.score - b.score);
+      return groups[0]?.group || players.slice(0, 4);
+    }
 
-      console.warn("No group found with playtime gap ≤ 2. Picking random group.");
-      return shuffleArray(players).slice(0, 4);
+    function shuffleCourt(courtId) {
+      const courtNames = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
+      const shuffled = shuffleArray(courtNames);
+      document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
     }
 
     function startCourt(courtId) {
@@ -257,8 +220,8 @@
     function finishCourt(courtId) {
       let courtPlayers;
       if (courtId === "court1") courtPlayers = court1;
-      if (courtId === "court2") courtPlayers = court2;
-      if (courtId === "court3") courtPlayers = court3;
+      else if (courtId === "court2") courtPlayers = court2;
+      else courtPlayers = court3;
 
       courtPlayers.forEach(player => {
         player.timesPlayed++;
@@ -268,8 +231,8 @@
       updateMatchHistory(courtPlayers);
 
       if (courtId === "court1") court1 = [];
-      if (courtId === "court2") court2 = [];
-      if (courtId === "court3") court3 = [];
+      else if (courtId === "court2") court2 = [];
+      else court3 = [];
 
       document.getElementById(courtId).innerText = "";
       document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
