@@ -114,6 +114,7 @@
     };
 
     let matchHistorySet = new Set();
+    let playedCombinations = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
@@ -175,6 +176,16 @@
 
       const selectedCourt = autoRebalancePlayers(availablePlayers);
 
+      // Check if the generated combination has been played before
+      const names = selectedCourt.map(player => player.name).join(", ");
+      if (playedCombinations.has(names)) {
+        // If the combination was already played, re-generate until unique
+        return generateCourt(courtId);
+      }
+
+      // Mark this combination as played
+      playedCombinations.add(names);
+
       if (courtId === "court1") court1 = selectedCourt;
       else if (courtId === "court2") court2 = selectedCourt;
       else if (courtId === "court3") court3 = selectedCourt;
@@ -206,7 +217,9 @@
         }
       }
       combos.sort((a, b) => a.score - b.score);
-      return combos.length > 0 ? combos[0].group : shuffleArray(players).slice(0, 4);
+
+      // Add randomness here to avoid always picking the "best" solution
+      return combos.length > 0 ? shuffleArray(combos)[0].group : shuffleArray(players).slice(0, 4);
     }
 
     function startCourt(courtId) {
