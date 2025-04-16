@@ -84,11 +84,11 @@
   <script>
     const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
-    let waitingQueue = []; // 🔄 NEW: to manage rotation
+    let waitingQueue = [];
     let court1 = [];
+    let matchHistorySet = new Set();
 
     const skillMap = { Beginner: 1, Intermediate: 2, Advanced: 3, Pro: 4 };
-    let matchHistorySet = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
@@ -137,13 +137,64 @@
         return;
       }
 
-      const group = available.slice(0, 4);
-      court1 = group;
-      waitingQueue = waitingQueue.filter(p => !group.includes(p));
+      // Step 1: Find all possible combinations of 4 players
+      const combinations = getCombinations(available, 4);
+      const validCombinations = combinations.filter(combination => {
+        // Filter out combinations that have already been played
+        const names = combination.map(p => p.name).join(", ");
+        return !matchHistorySet.has(names);
+      });
 
-      document.getElementById(courtId).innerText = group.map(p => p.name).join(", ");
+      if (validCombinations.length === 0) {
+        alert("All combinations have been played already.");
+        return;
+      }
+
+      // Step 2: Score each valid combination based on freshness and skill balance
+      const scoredCombinations = validCombinations.map(combination => {
+        const skillBalance = getSkillBalance(combination);
+        const freshnessScore = getFreshnessScore(combination);
+        return { combination, score: skillBalance - freshnessScore };
+      });
+
+      // Step 3: Choose the best combination
+      scoredCombinations.sort((a, b) => b.score - a.score);
+      const bestCombination = scoredCombinations[0].combination;
+
+      // Step 4: Assign the best combination to the court
+      court1 = bestCombination;
+      waitingQueue = waitingQueue.filter(p => !bestCombination.includes(p));
+
+      document.getElementById(courtId).innerText = court1.map(p => p.name).join(", ");
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
+    }
+
+    function getCombinations(players, size) {
+      const result = [];
+      function combine(start, combo) {
+        if (combo.length === size) {
+          result.push(combo);
+          return;
+        }
+        for (let i = start; i < players.length; i++) {
+          combine(i + 1, combo.concat(players[i]));
+        }
+      }
+      combine(0, []);
+      return result;
+    }
+
+    function getSkillBalance(combination) {
+      const skillCounts = combination.reduce((acc, player) => {
+        acc[skillMap[player.skill]] = (acc[skillMap[player.skill]] || 0) + 1;
+        return acc;
+      }, {});
+      return Object.values(skillCounts).reduce((sum, count) => sum - Math.abs(count - 1), 0);
+    }
+
+    function getFreshnessScore(combination) {
+      return combination.reduce((sum, player) => sum + player.timesPlayed, 0);
     }
 
     function startCourt(courtId) {
@@ -156,7 +207,7 @@
       const courtPlayers = court1;
       courtPlayers.forEach(player => {
         player.timesPlayed++;
-        waitingQueue.push(player); // 👈 rotate them to back of queue
+        waitingQueue.push(player); // Rotate them to back of queue
       });
       updateMatchHistory(courtPlayers);
 
