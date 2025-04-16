@@ -194,7 +194,7 @@
     }
 
     function getFreshnessScore(combination) {
-      return combination.reduce((sum, player) => sum + player.timesPlayed, 0);
+      return combination.reduce((sum, player) => sum + Math.min(player.timesPlayed, 3), 0);
     }
 
     function startCourt(courtId) {
@@ -206,7 +206,7 @@
     function finishCourt(courtId) {
       const courtPlayers = court1;
       courtPlayers.forEach(player => {
-        player.timesPlayed++;
+        player.timesPlayed = Math.min(player.timesPlayed + 1, 3); // Cap at 3 times played
         waitingQueue.push(player); // Rotate them to back of queue
       });
       updateMatchHistory(courtPlayers);
@@ -215,19 +215,13 @@
       document.getElementById(courtId).innerText = "";
       document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
       document.getElementById(`generateCourt${courtId.charAt(5)}`).disabled = false;
-      document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
-      generateReadyList();
     }
 
     function updateMatchHistory(players) {
-      players.sort((a, b) => a.name.localeCompare(b.name));
-      const names = players.map(p => p.name);
-      const historyKey = names.join(", ");
-      if (!matchHistorySet.has(historyKey)) {
-        matchHistorySet.add(historyKey);
-        const entry = document.createElement("div");
-        entry.textContent = historyKey;
-        document.getElementById("matchHistory").appendChild(entry);
+      const playerNames = players.map(player => player.name).join(", ");
+      if (!matchHistorySet.has(playerNames)) {
+        matchHistorySet.add(playerNames);
+        document.getElementById("matchHistory").innerHTML += `<div>${playerNames}</div>`;
       }
     }
   </script>
