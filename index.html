@@ -13,12 +13,13 @@
     .court {
       margin-bottom: 20px;
     }
-    input {
-      width: 300px;
+    input, select {
+      width: 200px;
       padding: 5px;
-      margin-right: 10px;
+      margin: 5px;
     }
     button {
+      margin-top: 15px;
       padding: 10px 20px;
     }
     table {
@@ -42,9 +43,14 @@
   </style>
 </head>
 <body>
-  <h1>Add Player Name</h1>
-
-  <input type="text" id="nameInput" placeholder="Enter player name" />
+  <h1>Add Player</h1>
+  <input type="text" id="playerName" placeholder="Enter name">
+  <select id="playerSkill">
+    <option value="Beginner">Beginner</option>
+    <option value="Intermediate">Intermediate</option>
+    <option value="Advanced">Advanced</option>
+    <option value="Pro">Pro</option>
+  </select>
   <button onclick="addPlayer()">Add to Ready Player List</button>
 
   <h3>Ready Player List:</h3>
@@ -52,6 +58,7 @@
     <thead>
       <tr>
         <th>Name</th>
+        <th>Skill</th>
         <th>Times Played</th>
         <th>Action</th>
       </tr>
@@ -87,39 +94,38 @@
   </div>
 
   <script>
-    const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
     let readyPlayers = [];
     let court1 = [], court2 = [], court3 = [];
 
     function addPlayer() {
-      const input = document.getElementById("nameInput");
-      const name = input.value.trim();
-      if (!name) return;
+      const name = document.getElementById("playerName").value.trim();
+      const skill = document.getElementById("playerSkill").value;
 
-      const nameLower = name.toLowerCase();
-
-      const isDuplicate = readyPlayers.some(p => p.name.toLowerCase() === nameLower) ||
-                          court1.some(p => p.name.toLowerCase() === nameLower) ||
-                          court2.some(p => p.name.toLowerCase() === nameLower) ||
-                          court3.some(p => p.name.toLowerCase() === nameLower);
-      
-      if (isDuplicate) {
-        alert(`Name "${name}" already exists in the list or is currently playing.`);
+      if (name === "") {
+        alert("Name cannot be empty.");
         return;
-  }
+      }
 
-      readyPlayers.push({ name, timesPlayed: 0, onBreak: false });
-      input.value = "";
+      if (readyPlayers.some(player => player.name.toLowerCase() === name.toLowerCase())) {
+        alert(`Player "${name}" is already in the list.`);
+        return;
+      }
+
+      readyPlayers.push({ name, skill, timesPlayed: 0, onBreak: false });
+      document.getElementById("playerName").value = "";
       generateReadyList();
     }
 
     function generateReadyList() {
-      readyPlayerList.innerHTML = "";
       readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
+      const tableBody = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = "";
+
       readyPlayers.forEach(player => {
-        const row = readyPlayerList.insertRow();
+        const row = tableBody.insertRow();
         row.innerHTML = `
           <td>${player.name}</td>
+          <td>${player.skill}</td>
           <td>${player.timesPlayed}</td>
           <td><button onclick="toggleOnBreak('${player.name}')">${player.onBreak ? "Back from Break" : "On Break"}</button></td>
         `;
@@ -127,8 +133,8 @@
       });
     }
 
-    function toggleOnBreak(playerName) {
-      const player = readyPlayers.find(p => p.name === playerName);
+    function toggleOnBreak(name) {
+      const player = readyPlayers.find(p => p.name === name);
       if (player) {
         player.onBreak = !player.onBreak;
         generateReadyList();
@@ -144,25 +150,27 @@
     }
 
     function shuffleCourt(courtId) {
-      let courtNames = getCourtArray(courtId);
-      const shuffled = shuffleArray([...courtNames]);
+      let court = courtId === "court1" ? court1 : courtId === "court2" ? court2 : court3;
+      const shuffled = shuffleArray([...court]);
       document.getElementById(courtId).innerText = shuffled.map(p => p.name).join(", ");
     }
 
     function generateCourt(courtId) {
-      const availablePlayers = readyPlayers.filter(p => !p.onBreak);
-      if (availablePlayers.length < 4) {
+      const available = readyPlayers.filter(p => !p.onBreak);
+      if (available.length < 4) {
         alert("Not enough players to start the game.");
         return;
       }
 
-      shuffleArray(availablePlayers);
-      const selectedCourt = availablePlayers.slice(0, 4);
-      setCourtArray(courtId, selectedCourt);
-      readyPlayers = readyPlayers.filter(p => !selectedCourt.includes(p));
+      shuffleArray(available);
+      const selected = available.slice(0, 4);
+      if (courtId === "court1") court1 = selected;
+      else if (courtId === "court2") court2 = selected;
+      else court3 = selected;
 
-      document.getElementById(courtId).innerText = selectedCourt.map(p => p.name).join(", ");
-      document.getElementById("generate" + capitalize(courtId)).disabled = true;
+      readyPlayers = readyPlayers.filter(p => !selected.includes(p));
+      document.getElementById(courtId).innerText = selected.map(p => p.name).join(", ");
+      document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
     }
 
@@ -173,33 +181,26 @@
     }
 
     function finishCourt(courtId) {
-      const courtPlayers = getCourtArray(courtId);
-      courtPlayers.forEach(p => {
-        p.timesPlayed++;
-        readyPlayers.push(p);
+      let court;
+      if (courtId === "court1") court = court1;
+      else if (courtId === "court2") court = court2;
+      else court = court3;
+
+      court.forEach(player => {
+        player.timesPlayed++;
+        readyPlayers.push(player);
       });
-      setCourtArray(courtId, []);
+
+      if (courtId === "court1") court1 = [];
+      else if (courtId === "court2") court2 = [];
+      else court3 = [];
+
       document.getElementById(courtId).innerText = "";
       document.getElementById("finishButton" + courtId.charAt(5)).disabled = true;
-      document.getElementById("generate" + capitalize(courtId)).disabled = false;
-      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = true;
+      document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = false;
+      document.getElementById("shuffle" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
+
       generateReadyList();
-    }
-
-    function getCourtArray(courtId) {
-      if (courtId === "court1") return court1;
-      if (courtId === "court2") return court2;
-      if (courtId === "court3") return court3;
-    }
-
-    function setCourtArray(courtId, arr) {
-      if (courtId === "court1") court1 = arr;
-      if (courtId === "court2") court2 = arr;
-      if (courtId === "court3") court3 = arr;
-    }
-
-    function capitalize(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
     }
   </script>
 </body>
