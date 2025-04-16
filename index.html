@@ -102,16 +102,21 @@
     let court1 = [];
     let court2 = [];
     let court3 = [];
-    const maxPlayers = 40;
+
+    const skillMap = {
+      "Beginner": 1,
+      "Intermediate": 2,
+      "Advanced": 3,
+      "Pro": 4
+    };
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
       const newSkill = document.getElementById("newPlayerSkill").value;
 
-      // Check if the name already exists anywhere (ready list or on court)
       const allPlayers = [...readyPlayers, ...court1, ...court2, ...court3];
       if (allPlayers.some(player => player.name.toLowerCase() === newName.toLowerCase())) {
-        alert(`Duplicate name found: "${newName}". already exists.`);
+        alert(`Duplicate name found: "${newName}" already exists.`);
         return;
       }
 
@@ -120,12 +125,12 @@
         generateReadyList();
       }
 
-      document.getElementById("newPlayerName").value = ""; // Clear the input field
+      document.getElementById("newPlayerName").value = "";
     }
 
     function generateReadyList() {
-      readyPlayerList.innerHTML = "";
       readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
+      readyPlayerList.innerHTML = "";
       readyPlayers.forEach(player => {
         const row = readyPlayerList.insertRow();
         row.innerHTML = `
@@ -163,22 +168,37 @@
         return;
       }
 
-      shuffleArray(availablePlayers);
-      const selectedCourt = availablePlayers.slice(0, 4);
+      const selectedCourt = autoRebalancePlayers(availablePlayers);
 
-      if (courtId === "court1") {
-        court1 = selectedCourt;
-      } else if (courtId === "court2") {
-        court2 = selectedCourt;
-      } else if (courtId === "court3") {
-        court3 = selectedCourt;
-      }
+      if (courtId === "court1") court1 = selectedCourt;
+      else if (courtId === "court2") court2 = selectedCourt;
+      else if (courtId === "court3") court3 = selectedCourt;
 
       readyPlayers = readyPlayers.filter(player => !selectedCourt.includes(player));
       document.getElementById(courtId).innerText = selectedCourt.map(player => player.name).join(", ");
 
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
+    }
+
+    function autoRebalancePlayers(players) {
+      const combos = [];
+      for (let i = 0; i < players.length - 3; i++) {
+        for (let j = i + 1; j < players.length - 2; j++) {
+          for (let k = j + 1; k < players.length - 1; k++) {
+            for (let l = k + 1; l < players.length; l++) {
+              const group = [players[i], players[j], players[k], players[l]];
+              const totalSkill = group.reduce((sum, p) => sum + skillMap[p.skill], 0);
+              const teamDiff = Math.abs((skillMap[group[0].skill] + skillMap[group[1].skill]) - (skillMap[group[2].skill] + skillMap[group[3].skill]));
+              const hasMixedSkill = group.some(p => skillMap[p.skill] >= 3) && group.some(p => skillMap[p.skill] === 1);
+              const penalty = hasMixedSkill ? 10 : 0;
+              combos.push({ group, score: teamDiff + penalty });
+            }
+          }
+        }
+      }
+      combos.sort((a, b) => a.score - b.score);
+      return combos.length > 0 ? combos[0].group : shuffleArray(players).slice(0, 4);
     }
 
     function startCourt(courtId) {
