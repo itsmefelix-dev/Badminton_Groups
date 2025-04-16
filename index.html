@@ -13,7 +13,7 @@
     .court {
       margin-bottom: 20px;
     }
-    input {
+    input, select {
       width: 200px;
       padding: 5px;
       margin: 5px;
@@ -109,7 +109,7 @@
       const newSkill = document.getElementById("newPlayerSkill").value;
 
       // Check if the name already exists in the readyPlayers list
-      if (readyPlayers.some(player => player.name === newName)) {
+      if (readyPlayers.some(player => player.name.toLowerCase() === newName.toLowerCase())) {
         alert(`Duplicate name found: "${newName}". Please enter a unique name.`);
         return;
       }
