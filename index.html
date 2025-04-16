@@ -197,7 +197,10 @@
               const teamDiff = Math.abs((skillMap[group[0].skill] + skillMap[group[1].skill]) - (skillMap[group[2].skill] + skillMap[group[3].skill]));
               const hasMixedSkill = group.some(p => skillMap[p.skill] >= 3) && group.some(p => skillMap[p.skill] === 1);
               const penalty = hasMixedSkill ? 10 : 0;
-              combos.push({ group, score: teamDiff + penalty });
+              const avgPlayed = group.reduce((sum, p) => sum + p.timesPlayed, 0) / 4;
+              const playDiff = group.reduce((sum, p) => sum + Math.abs(p.timesPlayed - avgPlayed), 0); // smaller is better
+              const totalScore = teamDiff + penalty + playDiff * 1.5; // Weight playDiff with multiplier
+              combos.push({ group, score: totalScore });
             }
           }
         }
