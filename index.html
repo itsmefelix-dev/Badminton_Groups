@@ -139,7 +139,7 @@
 
       available.sort((a, b) => a.timesPlayed - b.timesPlayed);
       const minPlayed = available[0].timesPlayed;
-      const group = available.filter(p => p.timesPlayed <= minPlayed + 1).slice(0, 4);
+      const group = available.filter(p => p.timesPlayed <= minPlayed + 2).slice(0, 4);
 
       court1 = group;
       waitingQueue = waitingQueue.filter(p => !group.includes(p));
