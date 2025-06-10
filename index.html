@@ -7,21 +7,23 @@
     body {
       font-family: Arial, sans-serif;
       padding: 30px;
-      max-width: 600px;
+      max-width: 800px;
       margin: auto;
     }
     .court {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 10px;
     }
     input, select {
       width: 200px;
       padding: 5px;
       margin: 5px;
-      text-align: left;
     }
     button {
-      margin-top: 15px;
-      padding: 10px 20px;
+      margin-top: 10px;
+      padding: 8px 16px;
     }
     table {
       width: 100%;
@@ -35,16 +37,16 @@
       padding: 10px;
       text-align: center;
     }
-    .court button {
-      margin-top: 10px;
-    }
     .on-break {
       background-color: #f0ad4e;
     }
   </style>
 </head>
 <body>
-  <h1>Enter Player Name</h1>
+  <h1>Badminton Grouping Tool</h1>
+
+  <label><strong>Number of Courts:</strong></label>
+  <input type="number" id="courtCountInput" value="1" min="1" max="10" onchange="renderCourts()" />
 
   <h3>Add New Player</h3>
   <input type="text" id="newPlayerName" placeholder="Player Name" />
@@ -69,31 +71,23 @@
     <tbody></tbody>
   </table>
 
-  <div class="court">
-    <h3>Court 1</h3>
-    <div id="court1"></div>
-    <button id="shuffleCourt1" onclick="shuffleCourt('court1')" disabled>Shuffle Court 1</button>
-    <button onclick="generateCourt('court1')" id="generateCourt1">Generate Court 1</button>
-    <button onclick="startCourt('court1')" id="startButton1" disabled>Start Court 1</button>
-    <button onclick="finishCourt('court1')" id="finishButton1" disabled>Finish Court 1</button>
-  </div>
+  <div id="courtContainer"></div>
 
   <h3>Match History:</h3>
   <div id="matchHistory"></div>
 
   <script>
-    const readyPlayerList = document.getElementById("readyPlayerList").getElementsByTagName('tbody')[0];
+    const skillMap = { Beginner: 1, Intermediate: 2, Advanced: 3, Pro: 4 };
+
     let readyPlayers = [];
     let waitingQueue = [];
-    let court1 = [];
-
-    const skillMap = { Beginner: 1, Intermediate: 2, Advanced: 3, Pro: 4 };
+    let courts = [];
     let matchHistorySet = new Set();
 
     function addPlayerToReadyList() {
       const newName = document.getElementById("newPlayerName").value.trim();
       const newSkill = document.getElementById("newPlayerSkill").value;
-      const allPlayers = [...readyPlayers, ...court1];
+      const allPlayers = [...readyPlayers, ...courts.flat()];
       if (allPlayers.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
         alert(`Duplicate name found: "${newName}" already exists.`);
         return;
@@ -109,9 +103,10 @@
 
     function generateReadyList() {
       readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
-      readyPlayerList.innerHTML = "";
+      const tbody = document.getElementById("readyPlayerList").getElementsByTagName("tbody")[0];
+      tbody.innerHTML = "";
       readyPlayers.forEach(player => {
-        const row = readyPlayerList.insertRow();
+        const row = tbody.insertRow();
         row.innerHTML = `
           <td>${player.name}</td>
           <td>${player.skill}</td>
@@ -122,11 +117,146 @@
       });
     }
 
-    function toggleOnBreak(playerName) {
-      const player = readyPlayers.find(p => p.name === playerName);
+    function toggleOnBreak(name) {
+      const player = readyPlayers.find(p => p.name === name);
       if (player) {
         player.onBreak = !player.onBreak;
         generateReadyList();
+      }
+    }
+
+    function renderCourts() {
+      const count = parseInt(document.getElementById("courtCountInput").value);
+      const container = document.getElementById("courtContainer");
+      container.innerHTML = "";
+      courts = Array(count).fill(null).map(() => []);
+
+      for (let i = 0; i < count; i++) {
+        const div = document.createElement("div");
+        div.className = "court";
+        div.innerHTML = `
+          <h3>Court ${i + 1}</h3>
+          <div id="courtDisplay${i}"></div>
+          <button onclick="generateCourt(${i})" id="generateCourt${i}">Generate Court ${i + 1}</button>
+          <button onclick="shuffleCourt(${i})" id="shuffleCourt${i}" disabled>Shuffle Court ${i + 1}</button>
+          <button onclick="startCourt(${i})" id="startButton${i}" disabled>Start Court ${i + 1}</button>
+          <button onclick="finishCourt(${i})" id="finishButton${i}" disabled>Finish Court ${i + 1}</button>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function generateCourt(index) {
+      const courtId = `courtDisplay${index}`;
+      const available = waitingQueue.filter(p => !p.onBreak);
+      if (available.length < 4) {
+        alert("Not enough players to start the game.");
+        return;
+      }
+
+      available.sort((a, b) => a.timesPlayed - b.timesPlayed);
+      const minPlayed = available[0].timesPlayed;
+      const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
+      shuffleArray(eligible);
+
+      const combos = combinations(eligible, 4);
+      let bestGroup = null;
+      let bestScore = Infinity;
+
+      for (const group of combos) {
+        const names = group.map(p => p.name).sort().join(", ");
+        if (matchHistorySet.has(names)) continue;
+
+        const times = group.map(p => p.timesPlayed);
+        const score = times.reduce((a, b) => a + b, 0);
+        const diff = Math.max(...times) - Math.min(...times);
+
+        if (diff <= 2 && score < bestScore) {
+          bestScore = score;
+          bestGroup = group;
+        }
+      }
+
+      const finalGroup = bestGroup || eligible.slice(0, 4);
+      courts[index] = finalGroup;
+      waitingQueue = waitingQueue.filter(p => !finalGroup.includes(p));
+
+      document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
+      document.getElementById(`generateCourt${index}`).disabled = true;
+      document.getElementById(`shuffleCourt${index}`).disabled = false;
+      document.getElementById(`startButton${index}`).disabled = false;
+    }
+
+    function shuffleCourt(index) {
+      const courtId = `courtDisplay${index}`;
+      const available = waitingQueue.filter(p => !p.onBreak);
+      if (available.length < 4) {
+        alert("Not enough players to reshuffle.");
+        return;
+      }
+
+      available.sort((a, b) => a.timesPlayed - b.timesPlayed);
+      const minPlayed = available[0].timesPlayed;
+      const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
+      shuffleArray(eligible);
+
+      const combos = combinations(eligible, 4);
+      let bestGroup = null;
+      let bestScore = Infinity;
+
+      for (const group of combos) {
+        const names = group.map(p => p.name).sort().join(", ");
+        if (matchHistorySet.has(names)) continue;
+
+        const times = group.map(p => p.timesPlayed);
+        const score = times.reduce((a, b) => a + b, 0);
+        const diff = Math.max(...times) - Math.min(...times);
+
+        if (diff <= 2 && score < bestScore) {
+          bestScore = score;
+          bestGroup = group;
+        }
+      }
+
+      const finalGroup = bestGroup || eligible.slice(0, 4);
+      courts[index] = finalGroup;
+      waitingQueue = waitingQueue.filter(p => !finalGroup.includes(p));
+
+      document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
+      document.getElementById(`startButton${index}`).disabled = false;
+    }
+
+    function startCourt(index) {
+      document.getElementById(`courtDisplay${index}`).innerHTML += " (Game Started)";
+      document.getElementById(`startButton${index}`).disabled = true;
+      document.getElementById(`finishButton${index}`).disabled = false;
+    }
+
+    function finishCourt(index) {
+      const players = courts[index];
+      players.forEach(p => {
+        p.timesPlayed++;
+        waitingQueue.push(p);
+      });
+      updateMatchHistory(players);
+      courts[index] = [];
+
+      document.getElementById(`courtDisplay${index}`).innerText = "";
+      document.getElementById(`finishButton${index}`).disabled = true;
+      document.getElementById(`generateCourt${index}`).disabled = false;
+      document.getElementById(`shuffleCourt${index}`).disabled = true;
+      generateReadyList();
+    }
+
+    function updateMatchHistory(players) {
+      players.sort((a, b) => a.name.localeCompare(b.name));
+      const names = players.map(p => `${p.name} (${p.timesPlayed})`);
+      const key = players.map(p => p.name).sort().join(", ");
+      if (!matchHistorySet.has(key)) {
+        matchHistorySet.add(key);
+        const div = document.createElement("div");
+        div.textContent = names.join(", ");
+        document.getElementById("matchHistory").appendChild(div);
       }
     }
 
@@ -145,130 +275,15 @@
       return result;
     }
 
-    function generateCourt(courtId) {
-      const available = waitingQueue.filter(p => !p.onBreak);
-      if (available.length < 4) {
-        alert("Not enough players to start the game. Please add more players.");
-        return;
-      }
-
-      available.sort((a, b) => a.timesPlayed - b.timesPlayed);
-      const minPlayed = available[0].timesPlayed;
-      const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
-
-      const groups = combinations(eligible, 4).sort(() => Math.random() - 0.5);
-
-      let bestGroup = null;
-      let bestScore = Infinity;
-
-      for (const group of groups) {
-        const names = group.map(p => p.name).sort().join(", ");
-        if (matchHistorySet.has(names)) continue;
-
-        const times = group.map(p => p.timesPlayed);
-        const max = Math.max(...times);
-        const min = Math.min(...times);
-        const diff = max - min;
-
-        if (diff <= 2) {
-          const score = times.reduce((a, b) => a + b, 0);
-          if (score < bestScore || !bestGroup) {
-            bestScore = score;
-            bestGroup = group;
-          }
-        }
-      }
-
-      const finalGroup = bestGroup || eligible.slice(0, 4);
-
-      court1 = finalGroup;
-      waitingQueue = waitingQueue.filter(p => !finalGroup.includes(p));
-
-      document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
-      document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
-      document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
-      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = false;
-    }
-
-    function shuffleCourt(courtId) {
-      waitingQueue.push(...court1);
-      court1 = [];
-
-      const available = waitingQueue.filter(p => !p.onBreak);
-      if (available.length < 4) {
-        alert("Not enough players to reshuffle.");
-        return;
-      }
-
-      available.sort((a, b) => a.timesPlayed - b.timesPlayed);
-      const minPlayed = available[0].timesPlayed;
-      const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
-
-      const groups = combinations(eligible, 4).sort(() => Math.random() - 0.5);
-
-      let bestGroup = null;
-      let bestScore = Infinity;
-
-      for (const group of groups) {
-        const names = group.map(p => p.name).sort().join(", ");
-        if (matchHistorySet.has(names)) continue;
-
-        const times = group.map(p => p.timesPlayed);
-        const max = Math.max(...times);
-        const min = Math.min(...times);
-        const diff = max - min;
-
-        if (diff <= 2) {
-          const score = times.reduce((a, b) => a + b, 0);
-          if (score < bestScore || !bestGroup) {
-            bestScore = score;
-            bestGroup = group;
-          }
-        }
-      }
-
-      const finalGroup = bestGroup || eligible.slice(0, 4);
-
-      court1 = finalGroup;
-      waitingQueue = waitingQueue.filter(p => !finalGroup.includes(p));
-
-      document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
-    }
-
-    function startCourt(courtId) {
-      document.getElementById(`${courtId}`).innerHTML += " (Game Started)";
-      document.getElementById(`startButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = false;
-    }
-
-    function finishCourt(courtId) {
-      const courtPlayers = court1;
-      courtPlayers.forEach(player => {
-        player.timesPlayed++;
-        waitingQueue.push(player);
-      });
-      updateMatchHistory(courtPlayers);
-
-      court1 = [];
-      document.getElementById(courtId).innerText = "";
-      document.getElementById(`finishButton${courtId.charAt(5)}`).disabled = true;
-      document.getElementById(`generateCourt${courtId.charAt(5)}`).disabled = false;
-      document.getElementById(`shuffleCourt${courtId.charAt(5)}`).disabled = true;
-      generateReadyList();
-    }
-
-    function updateMatchHistory(players) {
-      players.sort((a, b) => a.name.localeCompare(b.name));
-      const names = players.map(p => `${p.name} (${p.timesPlayed})`);
-      const historyKey = names.join(", ");
-      const simpleKey = players.map(p => p.name).sort().join(", ");
-      if (!matchHistorySet.has(simpleKey)) {
-        matchHistorySet.add(simpleKey);
-        const entry = document.createElement("div");
-        entry.textContent = historyKey;
-        document.getElementById("matchHistory").appendChild(entry);
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
     }
+
+    // Initial render
+    renderCourts();
   </script>
 </body>
 </html>
