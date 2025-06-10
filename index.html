@@ -200,8 +200,21 @@
       document.getElementById(courtId).innerText = finalGroup.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
       document.getElementById("generate" + courtId.charAt(0).toUpperCase() + courtId.slice(1)).disabled = true;
       document.getElementById("startButton" + courtId.charAt(5)).disabled = false;
+      document.getElementById("shuffleCourt" + courtId.charAt(5)).disabled = false;
     }
 
+    function shuffleCourt(courtId) {
+      if (court1.length < 4) return;
+
+      // Shuffle court1 players
+      for (let i = court1.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [court1[i], court1[j]] = [court1[j], court1[i]];
+      }
+
+      document.getElementById(courtId).innerText = court1.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
+    }
+    
     function startCourt(courtId) {
       document.getElementById(`${courtId}`).innerHTML += " (Game Started)";
       document.getElementById(`startButton${courtId.charAt(5)}`).disabled = true;
