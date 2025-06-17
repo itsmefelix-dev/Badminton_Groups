@@ -189,6 +189,13 @@
 
     function shuffleCourt(index) {
       const courtId = `courtDisplay${index}`;
+
+      // 🟡 Return previous court players back to waitingQueue before reshuffling
+      const previousPlayers = courts[index];
+      if (previousPlayers && previousPlayers.length) {
+        waitingQueue.push(...previousPlayers);
+      }
+      
       const available = waitingQueue.filter(p => !p.onBreak);
       if (available.length < 4) {
         alert("Not enough players to reshuffle.");
