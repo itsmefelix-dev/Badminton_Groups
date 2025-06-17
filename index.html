@@ -162,6 +162,10 @@
       }
     }
 
+    function getLockedPlayers() {
+      return courts.flat().filter(p => p && p.currentCourt !== null);
+    }
+
     function renderManualDropdowns(index) {
       const container = document.getElementById(`manualDropdowns-${index}`);
       container.innerHTML = "";
@@ -180,7 +184,10 @@
         if (select && select.value) selected.push(select.value);
       }
 
-      const available = readyPlayers.filter(p => !p.onBreak && p.currentCourt === null && !selected.includes(p.name));
+      const locked = getLockedPlayers().map(p => p.name);
+      const availablePlayers = readyPlayers.filter(p =>
+        !p.onBreak && !locked.includes(p.name)
+      );
 
       for (let i = 0; i < 4; i++) {
         const select = document.getElementById(`manualName${i}-${index}`);
@@ -332,6 +339,14 @@
     }
 
     function startCourt(index) {
+      const currentPlayers = courts[index];
+      const lockedNames = getLockedPlayers().map(p => p.name);
+      const conflict = currentPlayers.filter(p => lockedNames.includes(p.name));
+
+      if (conflict.length > 0) {
+        alert(`Cannot start court ${index + 1}. Conflicting players: ${conflict.map(p => p.name).join(", ")}`);
+        return;
+      }
       const div = document.getElementById(`courtDisplay${index}`);
       div.innerHTML += " (Game Started)";
       document.getElementById(`startButton${index}`).disabled = true;
