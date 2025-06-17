@@ -141,6 +141,12 @@
           <button onclick="shuffleCourt(${i})" id="shuffleCourt${i}" disabled>Shuffle Court ${i + 1}</button>
           <button onclick="startCourt(${i})" id="startButton${i}" disabled>Start Court ${i + 1}</button>
           <button onclick="finishCourt(${i})" id="finishButton${i}" disabled>Finish Court ${i + 1}</button>
+          <h4>Manual Assign:</h4>
+          <input type="text" placeholder="Name 1" id="manualName0-${i}" />
+          <input type="text" placeholder="Name 2" id="manualName1-${i}" />
+          <input type="text" placeholder="Name 3" id="manualName2-${i}" />
+          <input type="text" placeholder="Name 4" id="manualName3-${i}" />
+          <button onclick="manuallyAssignCourt(${i})">Assign Manually</button>
         `;
         container.appendChild(div);
       }
@@ -291,6 +297,37 @@
 
     // Initial render
     renderCourts();
+
+    function manuallyAssignCourt(index) {
+      const names = [];
+      for (let i = 0; i < 4; i++) {
+        const name = document.getElementById(`manualName${i}-${index}`).value.trim();
+        if (name) names.push(name);
+      }
+
+      if (names.length !== 4) {
+        alert("Please enter exactly 4 names.");
+        return;
+      }
+
+      const selectedPlayers = [];
+      for (const name of names) {
+        const player = readyPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (!player || player.onBreak) {
+          alert(`Player "${name}" is not available or on break.`);
+          return;
+        }
+        selectedPlayers.push(player);
+      }
+
+      courts[index] = selectedPlayers;
+      waitingQueue = waitingQueue.filter(p => !selectedPlayers.includes(p));
+
+      document.getElementById(`courtDisplay${index}`).innerText = selectedPlayers.map(p => `${p.name} (${p.timesPlayed})`).join(", ") + " (Manually Assigned)";
+      document.getElementById(`generateCourt${index}`).disabled = true;
+      document.getElementById(`shuffleCourt${index}`).disabled = true;
+      document.getElementById(`startButton${index}`).disabled = false;
+    }
   </script>
 </body>
 </html>
