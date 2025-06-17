@@ -303,7 +303,11 @@
         waitingQueue.push(...prev);
       }
 
-      const available = waitingQueue.filter(p => !p.onBreak && p.currentCourt === null);
+      const lockedNames = courts.flatMap((c, i) => startedCourts[i] ? c.map(p => p.name) : []);
+      const available = waitingQueue.filter(
+        p => !p.onBreak && p.currentCourt === null && !lockedNames.includes(p.name)
+      );
+      
       if (available.length < 4) return alert("Not enough players to reshuffle.");
 
       available.sort((a, b) => a.timesPlayed - b.timesPlayed);
