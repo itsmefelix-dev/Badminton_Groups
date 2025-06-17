@@ -163,7 +163,7 @@
     }
 
     function getLockedPlayers() {
-      return courts.flat().filter(p => p && p.currentCourt !== null);
+      return courts.flat().filter(p => p && p.locked);
     }
 
     function renderManualDropdowns(index) {
@@ -195,12 +195,13 @@
         select.innerHTML = '<option value="">-- Select Player --</option>';
 
         readyPlayers.forEach(p => {
-          if (!p.onBreak && p.currentCourt === null && (p.name === current || !selected.includes(p.name))) {
-            const option = document.createElement("option");
-            option.value = p.name;
-            option.textContent = `${p.name} (${p.skill}, ${p.timesPlayed})`;
-            if (p.name === current) option.selected = true;
-            select.appendChild(option);
+          if (!p.onBreak && !locked.includes(p.name) &&
+              (p.name === current || !selected.includes(p.name))) {
+              const option = document.createElement("option");
+              option.value = p.name;
+              option.textContent = `${p.name} (${p.skill}, ${p.timesPlayed})`;
+              if (p.name === current) option.selected = true;
+              select.appendChild(option);
           }
         });
 
@@ -235,14 +236,14 @@
       const group = [];
       for (const name of names) {
         const p = readyPlayers.find(p => p.name === name);
-        if (!p || p.onBreak || p.currentCourt !== null) {
+        if (!p || p.onBreak || p.locked) {
           alert(`Player "${name}" is not available.`);
           return;
         }
+        p.currentCourt = index;
         group.push(p);
       }
 
-      group.forEach(p => p.currentCourt = index);
       courts[index] = group;
       waitingQueue = waitingQueue.filter(p => !group.includes(p));
 
@@ -347,16 +348,22 @@
         alert(`Cannot start court ${index + 1}. Conflicting players: ${conflict.map(p => p.name).join(", ")}`);
         return;
       }
+
+      currentPlayers.forEach(p => p.locked = true);
+
       const div = document.getElementById(`courtDisplay${index}`);
       div.innerHTML += " (Game Started)";
       document.getElementById(`startButton${index}`).disabled = true;
       document.getElementById(`finishButton${index}`).disabled = false;
+
+      updateAllManualDropdowns(); // refresh all dropdowns based on new locks
     }
 
     function finishCourt(index) {
       const group = courts[index];
       group.forEach(p => {
         p.timesPlayed++;
+        p.locked = false;
         p.currentCourt = null;
         waitingQueue.push(p);
       });
