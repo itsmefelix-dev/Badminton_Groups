@@ -300,7 +300,12 @@
       const prev = courts[index];
       if (prev.length) {
         prev.forEach(p => p.currentCourt = null);
-        waitingQueue.push(...prev);
+        // Only return players who are not locked in another court
+        const unlocked = prev.filter(p => !p.locked);
+        // Add only if not already in queue
+        unlocked.forEach(p => {
+          if (!waitingQueue.includes(p)) waitingQueue.push(p);
+        });
       }
 
       const available = waitingQueue.filter(p => !p.onBreak && p.currentCourt === null && !p.locked);
