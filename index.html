@@ -56,7 +56,7 @@
     <option value="Advanced">Advanced</option>
     <option value="Pro">Pro</option>
   </select>
-  <button onclick="addPlayerToReadyList()">Add to Ready Player List</button>
+  <button onclick="addPlayer()">Add to Ready Player List</button>
 
   <h3>Ready Player List:</h3>
   <table id="readyPlayerList">
@@ -84,55 +84,57 @@
     let courts = [];
     let matchHistorySet = new Set();
 
-    function addPlayerToReadyList() {
-      const newName = document.getElementById("newPlayerName").value.trim();
-      const newSkill = document.getElementById("newPlayerSkill").value;
+    function addPlayer() {
+      const nameInput = document.getElementById("newPlayerName").value.trim();
+      const skillInput = document.getElementById("newPlayerSkill").value;
       const allPlayers = [...readyPlayers, ...courts.flat()];
 
-      if (allPlayers.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
-        alert(`Duplicate name found: "${newName}" already exists.`);
+      if (!nameInput) return;
+
+      if (allPlayers.some(p => p.name.toLowerCase() === nameInput.toLowerCase())) {
+        alert(`Duplicate name found: "${nameInput}" already exists.`);
         return;
       }
 
-      if (newName !== "") {
-        const newPlayer = {
-          name: newName,
-          skill: newSkill,
-          timesPlayed: 0,
-          onBreak: false,
-          currentCourt: null
-        };
-        readyPlayers.push(newPlayer);
-        waitingQueue.push(newPlayer);
-        generateReadyList();
-        updateAllManualDropdowns();
-      }
+      const newPlayer = {
+        name: nameInput,
+        skill: skillInput,
+        timesPlayed: 0,
+        onBreak: false,
+        currentCourt: null,
+        locked: false
+      };
 
+      readyPlayers.push(newPlayer);
+      waitingQueue.push(newPlayer);
+      updateReadyList();
+      updateAllDropdowns();
       document.getElementById("newPlayerName").value = "";
     }
 
-    function generateReadyList() {
+    function updateReadyList() {
       readyPlayers.sort((a, b) => a.name.localeCompare(b.name));
-      const tbody = document.getElementById("readyPlayerList").querySelector("tbody");
+      const tbody = document.querySelector("#readyPlayerList tbody");
       tbody.innerHTML = "";
-      readyPlayers.forEach(player => {
+
+      readyPlayers.forEach(p => {
         const row = tbody.insertRow();
         row.innerHTML = `
-          <td>${player.name}</td>
-          <td>${player.skill}</td>
-          <td>${player.timesPlayed}</td>
-          <td><button onclick="toggleOnBreak('${player.name}')">${player.onBreak ? "Back from Break" : "On Break"}</button></td>
+          <td>${p.name}</td>
+          <td>${p.skill}</td>
+          <td>${p.timesPlayed}</td>
+          <td><button onclick="toggleBreak('${p.name}')">${p.onBreak ? 'Back from Break' : 'On Break'}</button></td>
         `;
-        if (player.onBreak) row.classList.add("on-break");
+        if (p.onBreak) row.classList.add("on-break");
       });
     }
 
-    function toggleOnBreak(name) {
+    function toggleBreak(name) {
       const player = readyPlayers.find(p => p.name === name);
       if (player) {
         player.onBreak = !player.onBreak;
-        generateReadyList();
-        updateAllManualDropdowns();
+        updateReadyList();
+        updateAllDropdowns();
       }
     }
 
@@ -140,12 +142,12 @@
       const count = parseInt(document.getElementById("courtCountInput").value);
       const container = document.getElementById("courtContainer");
       container.innerHTML = "";
-      courts = Array(count).fill(null).map(() => []);
+      courts = Array(count).fill().map(() => []);
 
       for (let i = 0; i < count; i++) {
-        const div = document.createElement("div");
-        div.className = "court";
-        div.innerHTML = `
+        const courtDiv = document.createElement("div");
+        courtDiv.className = "court";
+        courtDiv.innerHTML = `
           <h3>Court ${i + 1}</h3>
           <div id="courtDisplay${i}"></div>
           <button onclick="generateCourt(${i})" id="generateCourt${i}">Generate Court ${i + 1}</button>
@@ -154,78 +156,73 @@
           <button onclick="finishCourt(${i})" id="finishButton${i}" disabled>Finish Court ${i + 1}</button>
           <h4>Manual Assign:</h4>
           <div id="manualDropdowns-${i}"></div>
-          <button onclick="manuallyAssignCourt(${i})">Assign Manually</button>
-          <button onclick="clearManualDropdowns(${i})">Clear</button>
+          <button onclick="assignManually(${i})">Assign Manually</button>
+          <button onclick="clearDropdowns(${i})">Clear</button>
         `;
-        container.appendChild(div);
+        container.appendChild(courtDiv);
         renderManualDropdowns(i);
       }
     }
-
-    function getLockedPlayers() {
-      return courts.flat().filter(p => p && p.locked);
-    }
-
     function renderManualDropdowns(index) {
       const container = document.getElementById(`manualDropdowns-${index}`);
       container.innerHTML = "";
       for (let i = 0; i < 4; i++) {
         const select = document.createElement("select");
         select.id = `manualName${i}-${index}`;
+        select.innerHTML = '<option value="">-- Select Player --</option>';
         container.appendChild(select);
       }
-      updateManualDropdowns(index);
+      updateDropdowns(index);
     }
 
-    function updateManualDropdowns(index) {
+    function updateDropdowns(index) {
       const selected = [];
       for (let i = 0; i < 4; i++) {
-        const select = document.getElementById(`manualName${i}-${index}`);
-        if (select && select.value) selected.push(select.value);
+        const val = document.getElementById(`manualName${i}-${index}`).value;
+        if (val) selected.push(val);
       }
 
-      const locked = getLockedPlayers().map(p => p.name);
-      const availablePlayers = readyPlayers.filter(p =>
-        !p.onBreak && !locked.includes(p.name)
+      const lockedNames = getLockedPlayers().map(p => p.name);
+      const available = readyPlayers.filter(p =>
+        !p.onBreak && !lockedNames.includes(p.name)
       );
 
       for (let i = 0; i < 4; i++) {
         const select = document.getElementById(`manualName${i}-${index}`);
         const current = select.value;
         select.innerHTML = '<option value="">-- Select Player --</option>';
-
-        readyPlayers.forEach(p => {
-          if (!p.onBreak && !locked.includes(p.name) &&
-              (p.name === current || !selected.includes(p.name))) {
-              const option = document.createElement("option");
-              option.value = p.name;
-              option.textContent = `${p.name} (${p.skill}, ${p.timesPlayed})`;
-              if (p.name === current) option.selected = true;
-              select.appendChild(option);
+        available.forEach(p => {
+          if (p.name === current || !selected.includes(p.name)) {
+            const opt = document.createElement("option");
+            opt.value = p.name;
+            opt.textContent = `${p.name} (${p.skill}, ${p.timesPlayed})`;
+            if (p.name === current) opt.selected = true;
+            select.appendChild(opt);
           }
         });
-
-        select.onchange = () => updateManualDropdowns(index);
+        select.onchange = () => updateDropdowns(index);
       }
     }
 
-    function clearManualDropdowns(index) {
+    function updateAllDropdowns() {
+      for (let i = 0; i < courts.length; i++) {
+        updateDropdowns(i);
+      }
+    }
+
+    function clearDropdowns(index) {
       for (let i = 0; i < 4; i++) {
         const select = document.getElementById(`manualName${i}-${index}`);
         if (select) select.value = "";
       }
-      updateManualDropdowns(index);
+      updateDropdowns(index);
     }
 
-    function updateAllManualDropdowns() {
-      for (let i = 0; i < courts.length; i++) updateManualDropdowns(i);
-    }
-
-    function manuallyAssignCourt(index) {
+    function assignManually(index) {
       const names = [];
       for (let i = 0; i < 4; i++) {
-        const name = document.getElementById(`manualName${i}-${index}`).value;
-        if (name) names.push(name);
+        const val = document.getElementById(`manualName${i}-${index}`).value;
+        if (val) names.push(val);
       }
 
       if (names.length !== 4) {
@@ -234,25 +231,25 @@
       }
 
       const group = [];
+      const locked = getLockedPlayers().map(p => p.name);
       for (const name of names) {
-        const p = readyPlayers.find(p => p.name === name);
-        if (!p || p.onBreak || p.locked) {
+        const player = readyPlayers.find(p => p.name === name);
+        if (!player || player.onBreak || locked.includes(name)) {
           alert(`Player "${name}" is not available.`);
           return;
         }
-        p.currentCourt = index;
-        group.push(p);
+        group.push(player);
+        player.currentCourt = index;
       }
 
       courts[index] = group;
       waitingQueue = waitingQueue.filter(p => !group.includes(p));
-
       document.getElementById(`courtDisplay${index}`).innerText =
         group.map(p => `${p.name} (${p.timesPlayed})`).join(", ") + " (Manually Assigned)";
       document.getElementById(`generateCourt${index}`).disabled = true;
       document.getElementById(`shuffleCourt${index}`).disabled = true;
       document.getElementById(`startButton${index}`).disabled = false;
-      updateAllManualDropdowns();
+      updateAllDropdowns();
     }
 
     function generateCourt(index) {
@@ -265,18 +262,16 @@
       const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
       shuffleArray(eligible);
 
-      const combos = combinations(eligible, 4);
+      const combos = getCombinations(eligible, 4);
       let best = null;
       let bestScore = Infinity;
 
       for (const group of combos) {
         const names = group.map(p => p.name).sort().join(", ");
         if (matchHistorySet.has(names)) continue;
-
         const times = group.map(p => p.timesPlayed);
         const score = times.reduce((a, b) => a + b, 0);
         const diff = Math.max(...times) - Math.min(...times);
-
         if (diff <= 2 && score < bestScore) {
           best = group;
           bestScore = score;
@@ -292,24 +287,18 @@
       document.getElementById(`generateCourt${index}`).disabled = true;
       document.getElementById(`shuffleCourt${index}`).disabled = false;
       document.getElementById(`startButton${index}`).disabled = false;
-      updateAllManualDropdowns();
+      updateAllDropdowns();
     }
 
     function shuffleCourt(index) {
-      const displayId = `courtDisplay${index}`;
       const prev = courts[index];
       if (prev.length) {
         prev.forEach(p => p.currentCourt = null);
-        // Only return players who are not locked in another court
-        const unlocked = prev.filter(p => !p.locked);
-        // Add only if not already in queue
-        unlocked.forEach(p => {
-          if (!waitingQueue.includes(p)) waitingQueue.push(p);
-        });
+        const returnable = prev.filter(p => !p.locked && !waitingQueue.includes(p));
+        waitingQueue.push(...returnable);
       }
 
       const available = waitingQueue.filter(p => !p.onBreak && p.currentCourt === null && !p.locked);
-      
       if (available.length < 4) return alert("Not enough players to reshuffle.");
 
       available.sort((a, b) => a.timesPlayed - b.timesPlayed);
@@ -317,18 +306,16 @@
       const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
       shuffleArray(eligible);
 
-      const combos = combinations(eligible, 4);
+      const combos = getCombinations(eligible, 4);
       let best = null;
       let bestScore = Infinity;
 
       for (const group of combos) {
         const names = group.map(p => p.name).sort().join(", ");
         if (matchHistorySet.has(names)) continue;
-
         const times = group.map(p => p.timesPlayed);
         const score = times.reduce((a, b) => a + b, 0);
         const diff = Math.max(...times) - Math.min(...times);
-
         if (diff <= 2 && score < bestScore) {
           best = group;
           bestScore = score;
@@ -340,29 +327,28 @@
       group.forEach(p => p.currentCourt = index);
       waitingQueue = waitingQueue.filter(p => !group.includes(p));
 
-      document.getElementById(displayId).innerText = group.map(p => `${p.name} (${p.timesPlayed})`).join(", ");
+      document.getElementById(`courtDisplay${index}`).innerText =
+        group.map(p => `${p.name} (${p.timesPlayed})`).join(", ") + " (Shuffled)";
       document.getElementById(`startButton${index}`).disabled = false;
-      updateAllManualDropdowns();
+      updateAllDropdowns();
     }
-
     function startCourt(index) {
-      const currentPlayers = courts[index];
+      const group = courts[index];
       const lockedNames = getLockedPlayers().map(p => p.name);
-      const conflict = currentPlayers.filter(p => lockedNames.includes(p.name));
+      const conflict = group.filter(p => lockedNames.includes(p.name));
 
       if (conflict.length > 0) {
         alert(`Cannot start court ${index + 1}. Conflicting players: ${conflict.map(p => p.name).join(", ")}`);
         return;
       }
 
-      currentPlayers.forEach(p => p.locked = true);
+      group.forEach(p => p.locked = true);
 
-      const div = document.getElementById(`courtDisplay${index}`);
-      div.innerHTML += " (Game Started)";
+      const display = document.getElementById(`courtDisplay${index}`);
+      display.innerHTML += " (Game Started)";
       document.getElementById(`startButton${index}`).disabled = true;
       document.getElementById(`finishButton${index}`).disabled = false;
-
-      updateAllManualDropdowns(); // refresh all dropdowns based on new locks
+      updateAllDropdowns();
     }
 
     function finishCourt(index) {
@@ -381,23 +367,25 @@
       document.getElementById(`finishButton${index}`).disabled = true;
       document.getElementById(`generateCourt${index}`).disabled = false;
       document.getElementById(`shuffleCourt${index}`).disabled = true;
-      generateReadyList();
-      updateAllManualDropdowns();
+      updateReadyList();
+      updateAllDropdowns();
     }
 
     function updateMatchHistory(group) {
-      group.sort((a, b) => a.name.localeCompare(b.name));
-      const names = group.map(p => `${p.name} (${p.timesPlayed})`);
-      const key = group.map(p => p.name).sort().join(", ");
+      const sorted = group.map(p => p.name).sort();
+      const key = sorted.join(", ");
       if (!matchHistorySet.has(key)) {
         matchHistorySet.add(key);
         const div = document.createElement("div");
-        div.textContent = names.join(", ");
+        div.textContent = sorted.map(name => {
+          const player = readyPlayers.find(p => p.name === name);
+          return `${name} (${player?.timesPlayed || "?"})`;
+        }).join(", ");
         document.getElementById("matchHistory").appendChild(div);
       }
     }
 
-    function combinations(arr, k) {
+    function getCombinations(arr, k) {
       const result = [];
       const combine = (start, combo) => {
         if (combo.length === k) {
@@ -417,6 +405,10 @@
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
+    }
+
+    function getLockedPlayers() {
+      return courts.flat().filter(p => p.locked);
     }
 
     renderCourts();
