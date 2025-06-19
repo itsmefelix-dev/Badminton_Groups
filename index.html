@@ -292,6 +292,7 @@
 
     function shuffleCourt(index) {
       const prev = courts[index];
+      const prevSet = new Set(prev.map(p => p.name));
       if (prev.length) {
         prev.forEach(p => p.currentCourt = null);
         const returnable = prev.filter(p => !p.locked && !waitingQueue.includes(p));
@@ -304,18 +305,25 @@
       available.sort((a, b) => a.timesPlayed - b.timesPlayed);
       const minPlayed = available[0].timesPlayed;
       const eligible = available.filter(p => p.timesPlayed <= minPlayed + 2);
-      shuffleArray(eligible);
 
       const combos = getCombinations(eligible, 4);
       let best = null;
       let bestScore = Infinity;
 
       for (const group of combos) {
-        const names = group.map(p => p.name).sort().join(", ");
-        if (matchHistorySet.has(names)) continue;
+        const groupNames = group.map(p => p.name).sort();
+        const groupSet = new Set(groupNames);
+
+        const sameAsPrevious = groupSet.size === prevSet.size && [...groupSet].every(n => prevSet.has(n));
+        if (sameAsPrevious) continue; // 💡 Skip if exact same 4 players (any order)
+
+        const namesKey = groupNames.join(", ");
+        if (matchHistorySet.has(namesKey)) continue;
+        
         const times = group.map(p => p.timesPlayed);
         const score = times.reduce((a, b) => a + b, 0);
         const diff = Math.max(...times) - Math.min(...times);
+        
         if (diff <= 2 && score < bestScore) {
           best = group;
           bestScore = score;
